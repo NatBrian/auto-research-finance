@@ -6,7 +6,7 @@ An autonomous quantitative research workflow that turns a research topic into an
 
 ## 1. Overview
 
-The workflow is designed to run inside Claude Code using Markdown skill files and MCP servers:
+The workflow is designed to run inside Claude Code using **Claude Code skills** (structured markdown instruction files) and **MCP servers**:
 
 1. Discover relevant papers on arXiv for a user-supplied topic.
 2. Let the user choose one paper from the ranked shortlist.
@@ -109,48 +109,86 @@ pip install -e .
 
 ### 3.3 Configure Claude Code
 
-This pipeline uses **Claude Code skills** and **MCP servers**. There are two ways to wire them up.
+This pipeline uses **Claude Code skills** and **MCP servers**. Follow these steps carefully.
 
-#### Option A — Run from inside the repo directory (Recommended)
+#### Step 1 — Install the skills into Claude Code
 
-Claude Code automatically reads `.claude.json` and `.claude/skills/` when you launch it from the project root. No manual copying is needed.
+Claude Code discovers skills by scanning subdirectories inside `.claude/skills/`. Each skill must be a folder containing a file named exactly `SKILL.md` (all caps). The folder name becomes the skill's invocation name.
+
+Required structure:
+```
+.claude/skills/
+├── factor-translate/
+│   └── SKILL.md
+├── hypothesis-refine/
+│   └── SKILL.md
+├── paper-discovery/
+│   └── SKILL.md
+├── paper-to-alpha/
+│   └── SKILL.md
+└── run-tearsheet/
+    └── SKILL.md
+```
+
+**Important:** A common mistake is placing `.md` files directly inside `.claude/skills/` (e.g. `skills/factor-translate.md`). Claude Code **will not load** these. Every skill must be in its own subfolder with a file named `SKILL.md`.
+
+You have two choices for where to put the skills:
+
+**Option A — Project-local (skills only available when working in this repo)**
+
+Copy the `.claude/skills` directory into this repo's root (already done if you cloned this repo). Claude Code automatically picks up `.claude/skills/` when launched from the project root.
+
+**Option B — Global (skills available in all Claude Code sessions)**
+
+Copy the skills to your global Claude Code config:
+
+```powershell
+# Windows (PowerShell)
+Copy-Item -Recurse .claude\skills $HOME\.claude\
+```
 
 ```bash
-# Make sure your venv is still active, then:
-claude
+# macOS / Linux
+cp -r .claude/skills ~/.claude/
 ```
 
-Inside the Claude Code session, run:
-
+After copying, verify the structure:
+```bash
+# You should see one folder per skill, each containing SKILL.md
+ls ~/.claude/skills/          # macOS / Linux
+ls $HOME\.claude\skills\      # Windows
 ```
-claude run-skill paper-to-alpha --param topic="momentum strategies"
+
+#### Step 2 — Configure MCP servers
+
+Merge the MCP server entries from this repo's `.claude.json` into your project's `.claude.json` (or `~/.claude/settings.json`):
+
+```json
+{
+  "mcpServers": {
+    "arxiv": {
+      "command": "python",
+      "args": ["path/to/paper-to-factor-pipeline/mcp_servers/arxiv_server/server.py"]
+    },
+    "backtest": {
+      "command": "python",
+      "args": ["path/to/paper-to-factor-pipeline/mcp_servers/backtest_server/server.py"]
+    }
+  }
+}
 ```
 
-#### Option B — Link the skills into an existing Claude Code project
+Make sure the `args` paths point to the **actual location** of this repo on your filesystem.
 
-If you want to use this pipeline from another project directory:
+#### Step 3 — Troubleshooting skills not loading
 
-1. Copy the skills folder into your project's `.claude/` directory:
-   ```bash
-   cp -r .claude/skills /path/to/your-project/.claude/
-   ```
+If skills do not appear in Claude Code's "Available skills" list:
 
-2. Merge the MCP server entries from this repo's `.claude.json` into your project's `.claude.json` (or `~/.claude/settings.json`):
-   ```json
-   {
-     "mcpServers": {
-       "arxiv": {
-         "command": "python",
-         "args": ["path/to/paper-to-factor-pipeline/mcp_servers/arxiv_server/server.py"]
-       },
-       "backtest": {
-         "command": "python",
-         "args": ["path/to/paper-to-factor-pipeline/mcp_servers/backtest_server/server.py"]
-       }
-     }
-   }
-   ```
-   Make sure the `args` paths point to the **actual location** of this repo on your filesystem.
+1. **Check file naming:** The file must be named `SKILL.md` (all caps), not `skill.md` or any other variation.
+2. **Check folder structure:** Each skill must be in its own subfolder: `.claude/skills/<skill-name>/SKILL.md`.
+3. **Check YAML frontmatter:** Each `SKILL.md` must start with a valid YAML block containing at minimum `name` and `description` fields.
+4. **Check description clarity:** Claude Code decides whether to load a skill **solely based on the `description` field**. If your prompt does not semantically match the description, the skill won't load. Include common trigger phrases in the description (e.g. "run backtest", "find papers", "translate the paper").
+5. **Verify permissions (Windows):** Make sure Claude Code has read access to the skills directory.
 
 ### 3.4 Start the MCP Servers
 
@@ -177,8 +215,22 @@ Both servers use stdio transport and will wait for Claude Code to connect.
 
 ### 3.5 Run the Pipeline
 
+Launch Claude Code from the repo root (make sure the venv is active):
+
 ```bash
-claude run-skill paper-to-alpha --param topic="momentum strategies"
+claude
+```
+
+Then, inside the Claude Code session, invoke the orchestrator skill:
+
+```
+/paper-to-alpha --param topic="momentum strategies"
+```
+
+Or simply describe what you want in natural language — the skill's `description` field will trigger it automatically:
+
+```
+Research momentum strategies and build a factor from the papers
 ```
 
 Example topics:
@@ -225,6 +277,8 @@ This is the pipeline state file used by the skill workflow. It tracks:
 - last error
 - refinement actions taken
 - final decision
+
+> **Note:** The skill files (`.claude/skills/*/SKILL.md`) are **not modified** during pipeline execution. All state is written to `sandbox/research_log.md` and `sandbox/factor.py`.
 
 ---
 
