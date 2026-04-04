@@ -3,6 +3,22 @@ import pandas as pd
 from scipy.stats import spearmanr
 
 
+def annualized_return(returns: pd.Series, periods_per_year: int = 252) -> float:
+    returns = returns.dropna().astype(float)
+    if returns.empty:
+        return np.nan
+
+    cumulative = float((1.0 + returns).prod())
+    if cumulative <= 0.0:
+        return np.nan
+
+    years = len(returns) / float(periods_per_year)
+    if years <= 0:
+        return np.nan
+
+    return float(cumulative ** (1.0 / years) - 1.0)
+
+
 def sharpe_ratio(
     returns: pd.Series,
     risk_free_rate: float = 0.0,

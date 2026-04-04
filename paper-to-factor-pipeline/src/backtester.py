@@ -7,7 +7,7 @@ import pandas as pd
 
 from src.benchmark import SPYBenchmark
 from src.execution_model import apply_costs
-from src.metrics import annualized_turnover, information_coefficient, max_drawdown, sharpe_ratio
+from src.metrics import annualized_return, annualized_turnover, information_coefficient, max_drawdown, sharpe_ratio
 from src.ml_baseline import MLBaseline
 from src.prepare import DataLoader
 from src.validator import validate_factor
@@ -109,7 +109,7 @@ class Backtester:
 
             strat_sharpe = sharpe_ratio(strategy_returns, risk_free_rate=risk_free, periods_per_year=periods)
             strat_ic = information_coefficient(signals, forward_returns)
-            strat_annual = float(strategy_returns.dropna().mean() * periods) if not strategy_returns.dropna().empty else np.nan
+            strat_annual = annualized_return(strategy_returns, periods_per_year=periods)
             strat_mdd = max_drawdown(strategy_returns)
             daily_turn = annualized_turnover(signals) / periods
 

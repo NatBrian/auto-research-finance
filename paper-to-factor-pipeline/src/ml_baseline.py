@@ -4,7 +4,7 @@ from sklearn.linear_model import LogisticRegression
 from sklearn.preprocessing import StandardScaler
 
 from src.execution_model import apply_costs
-from src.metrics import sharpe_ratio
+from src.metrics import annualized_return, sharpe_ratio
 
 try:
     from xgboost import XGBClassifier
@@ -55,10 +55,7 @@ class MLBaseline:
 
     @staticmethod
     def _annualized_return(returns: pd.Series) -> float:
-        returns = returns.dropna()
-        if returns.empty:
-            return np.nan
-        return float(returns.mean() * 252)
+        return annualized_return(returns)
 
     def run(self) -> dict:
         result = {

@@ -32,9 +32,12 @@ def setup_logging(level: str = "INFO") -> logging.Logger:
 
 def _json_default(value: Any) -> Any:
     if isinstance(value, (np.floating,)):
-        return float(value)
+        value = float(value)
+        return value if np.isfinite(value) else None
     if isinstance(value, (np.integer,)):
         return int(value)
+    if isinstance(value, (np.bool_,)):
+        return bool(value)
     if isinstance(value, (pd.Timestamp,)):
         return value.isoformat()
     if isinstance(value, (np.ndarray,)):
@@ -42,5 +45,24 @@ def _json_default(value: Any) -> Any:
     raise TypeError(f"Object of type {type(value).__name__} is not JSON serializable")
 
 
+def _sanitize_json(value: Any) -> Any:
+    if isinstance(value, dict):
+        return {key: _sanitize_json(val) for key, val in value.items()}
+    if isinstance(value, (list, tuple)):
+        return [_sanitize_json(item) for item in value]
+    if isinstance(value, np.ndarray):
+        return [_sanitize_json(item) for item in value.tolist()]
+    if isinstance(value, pd.Timestamp):
+        return value.isoformat()
+    if isinstance(value, (np.integer,)):
+        return int(value)
+    if isinstance(value, (np.bool_,)):
+        return bool(value)
+    if isinstance(value, (np.floating, float)):
+        value = float(value)
+        return value if np.isfinite(value) else None
+    return value
+
+
 def safe_json_dumps(obj: Any) -> str:
-    return json.dumps(obj, default=_json_default)
+    return json.dumps(_sanitize_json(obj), default=_json_default, allow_nan=False)

@@ -4,7 +4,11 @@ from pathlib import Path
 
 import numpy as np
 import pandas as pd
-import yfinance as yf
+
+try:
+    import yfinance as yf
+except Exception:  # pragma: no cover - optional dependency during thin test envs
+    yf = None
 
 from src.utils import DataUnavailableError, load_config
 
@@ -24,9 +28,22 @@ class DataLoader:
     def _active_universe(self, start_date: str) -> list[str]:
         start_ts = pd.Timestamp(start_date)
         active = self.universe_df[
-            (self.universe_df["Date_Added"] <= start_ts) | (self.universe_df["Date_Removed"].isna())
+            (self.universe_df["Date_Added"] <= start_ts)
+            & (
+                self.universe_df["Date_Removed"].isna()
+                | (self.universe_df["Date_Removed"] > start_ts)
+            )
         ]
         return sorted(active["Ticker"].dropna().astype(str).unique().tolist())
+
+    def _removed_date_for_ticker(self, ticker: str) -> pd.Timestamp | None:
+        removed = self.universe_df.loc[
+            self.universe_df["Ticker"].astype(str) == str(ticker), "Date_Removed"
+        ]
+        if removed.empty:
+            return None
+        removed_ts = removed.iloc[0]
+        return pd.Timestamp(removed_ts) if pd.notna(removed_ts) else None
 
     def _extract_ticker_frame(self, raw: pd.DataFrame, ticker: str) -> pd.DataFrame:
         if raw is None or raw.empty:
@@ -53,7 +70,12 @@ class DataLoader:
 
         return frame[self.REQUIRED_COLS]
 
-    def _build_synthetic_zero_data(self, ticker: str, date_index: pd.DatetimeIndex) -> pd.DataFrame:
+    def _build_synthetic_zero_data(
+        self,
+        ticker: str,
+        date_index: pd.DatetimeIndex,
+        removed_date: pd.Timestamp | None = None,
+    ) -> pd.DataFrame:
         n = len(date_index)
         if n == 0:
             return pd.DataFrame(columns=self.REQUIRED_COLS, index=date_index)
@@ -61,8 +83,14 @@ class DataLoader:
         seed = abs(hash((ticker, str(date_index[0]), str(date_index[-1])))) % (2**32)
         rng = np.random.default_rng(seed)
 
-        min_days = min(30, n)
-        active_days = int(rng.integers(min_days, n + 1))
+        if removed_date is not None and removed_date <= date_index[-1]:
+            active_days = int((date_index <= removed_date).sum())
+            if active_days <= 0:
+                return pd.DataFrame(index=date_index, columns=self.REQUIRED_COLS, dtype=float)
+        else:
+            min_days = min(30, n)
+            active_days = int(rng.integers(min_days, n + 1))
+
         start_price = float(rng.uniform(10.0, 50.0))
 
         daily_rets = rng.normal(0.0, 0.015, active_days)
@@ -106,6 +134,9 @@ class DataLoader:
         if not universe:
             raise DataUnavailableError("Universe is empty for the requested date range")
 
+        if yf is None:
+            raise DataUnavailableError("yfinance is not installed")
+
         try:
             raw = yf.download(
                 tickers=universe,
@@ -130,7 +161,11 @@ class DataLoader:
             close_count = int(ticker_df["Close"].dropna().shape[0]) if "Close" in ticker_df else 0
 
             if close_count == 0:
-                ticker_frames[ticker] = self._build_synthetic_zero_data(ticker, date_index)
+                ticker_frames[ticker] = self._build_synthetic_zero_data(
+                    ticker,
+                    date_index,
+                    removed_date=self._removed_date_for_ticker(ticker),
+                )
                 continue
 
             coverage = close_count / expected_len

@@ -35,8 +35,12 @@ def test_ml_baseline_returns_dict_with_sharpe_keys():
     result = MLBaseline(train, test).run()
     assert "xgb_sharpe" in result
     assert "logreg_sharpe" in result
+    assert "xgb_annual_return" in result
+    assert "logreg_annual_return" in result
     assert isinstance(result["xgb_sharpe"], float) or np.isnan(result["xgb_sharpe"])
     assert isinstance(result["logreg_sharpe"], float) or np.isnan(result["logreg_sharpe"])
+    assert isinstance(result["xgb_annual_return"], float) or np.isnan(result["xgb_annual_return"])
+    assert isinstance(result["logreg_annual_return"], float) or np.isnan(result["logreg_annual_return"])
 
 
 def test_ml_baseline_no_lookahead_in_features():

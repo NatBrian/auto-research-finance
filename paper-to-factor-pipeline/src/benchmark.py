@@ -1,8 +1,12 @@
 import numpy as np
 import pandas as pd
-import yfinance as yf
 
-from src.metrics import max_drawdown, sharpe_ratio
+try:
+    import yfinance as yf
+except Exception:  # pragma: no cover - optional dependency during thin test envs
+    yf = None
+
+from src.metrics import annualized_return, max_drawdown, sharpe_ratio
 from src.utils import setup_logging
 
 
@@ -13,6 +17,13 @@ class SPYBenchmark:
         self.logger = setup_logging()
 
     def run(self) -> dict:
+        if yf is None:
+            return {
+                "sharpe_ratio": np.nan,
+                "annualized_return": np.nan,
+                "max_drawdown": np.nan,
+                "returns_series": pd.Series(dtype=float),
+            }
         try:
             data = yf.download(
                 "SPY",
@@ -25,11 +36,10 @@ class SPYBenchmark:
             if close.empty:
                 raise ValueError("No SPY data returned")
 
-            returns = np.log(close / close.shift(1)).dropna()
-            annual_return = float(returns.mean() * 252)
+            returns = close.pct_change(fill_method=None).dropna()
             return {
                 "sharpe_ratio": sharpe_ratio(returns),
-                "annualized_return": annual_return,
+                "annualized_return": annualized_return(returns),
                 "max_drawdown": max_drawdown(returns),
                 "returns_series": returns,
             }

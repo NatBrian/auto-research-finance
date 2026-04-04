@@ -3,16 +3,18 @@ __pycache__/
 *.py[cod]
 *$py.class
 
-# C extensions
-*.so
-
-# Distribution / packaging
+# Build / packaging
 .Python
 build/
 dist/
+*.egg
 *.egg-info/
 .eggs/
+*.egg-link
 pip-wheel-metadata/
+
+# Native extensions
+*.so
 
 # Virtual environments
 .venv/
@@ -27,14 +29,23 @@ ENV/
 .coverage
 .coverage.*
 htmlcov/
+.ipynb_checkpoints/
 
-# OS / editor
+# Editors / OS
 .DS_Store
 Thumbs.db
+desktop.ini
 .vscode/
 .idea/
+*.swp
+*.swo
+*~
 .codex
 .qwen
+
+# Environment files
+.env
+.env.local
 
 # Project runtime artifacts
 outputs/*
@@ -45,3 +56,5 @@ data/cache/*
 
 # Optional local state artifacts
 *.log
+*.tmp
+*.bak

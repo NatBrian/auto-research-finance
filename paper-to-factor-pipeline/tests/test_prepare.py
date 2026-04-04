@@ -76,7 +76,7 @@ def test_load_returns_multiindex_dataframe(monkeypatch):
 
 
 def test_synthetic_delisting_injected(monkeypatch):
-    start, end = "2023-06-01", "2023-12-31"
+    start, end = "2023-01-03", "2023-06-30"
     _clear_cache(start, end)
     monkeypatch.setattr("src.prepare.yf.download", _mock_download)
 
@@ -85,6 +85,31 @@ def test_synthetic_delisting_injected(monkeypatch):
 
     assert "BBBY" in df.index.get_level_values("ticker")
     assert bbby.tail(5)[["Open", "High", "Low", "Close", "Volume"]].isna().all().all()
+
+
+def test_removed_ticker_excluded_after_start(monkeypatch):
+    start, end = "2023-06-01", "2023-07-31"
+    _clear_cache(start, end)
+    monkeypatch.setattr("src.prepare.yf.download", _mock_download)
+
+    df = DataLoader().load(start, end)
+
+    assert "BBBY" not in df.index.get_level_values("ticker")
+
+
+def test_active_universe_excludes_future_and_removed_names():
+    loader = DataLoader()
+    loader.universe_df = pd.DataFrame(
+        {
+            "Ticker": ["ACTIVE", "REMOVED", "FUTURE"],
+            "Date_Added": pd.to_datetime(["2010-01-01", "2010-01-01", "2020-02-01"]),
+            "Date_Removed": pd.to_datetime([None, "2019-12-31", None]),
+        }
+    )
+
+    active = loader._active_universe("2020-01-15")
+
+    assert active == ["ACTIVE"]
 
 
 def test_active_tickers_present(monkeypatch):

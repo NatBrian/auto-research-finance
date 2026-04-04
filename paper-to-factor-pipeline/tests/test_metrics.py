@@ -1,7 +1,7 @@
 import numpy as np
 import pandas as pd
 
-from src.metrics import information_coefficient, max_drawdown, sharpe_ratio
+from src.metrics import annualized_return, information_coefficient, max_drawdown, sharpe_ratio
 
 
 def test_sharpe_ratio_known_value():
@@ -13,6 +13,12 @@ def test_sharpe_ratio_known_value():
 def test_sharpe_ratio_zero_std_returns_nan():
     returns = pd.Series([0.01, 0.01, 0.01], dtype=float)
     assert np.isnan(sharpe_ratio(returns))
+
+
+def test_annualized_return_known_value():
+    returns = pd.Series([0.01, -0.02, 0.03], dtype=float)
+    expected = float((1.0 + returns).prod() ** (252 / len(returns)) - 1.0)
+    assert abs(annualized_return(returns) - expected) < 1e-9
 
 
 def test_information_coefficient_perfect_signal():
