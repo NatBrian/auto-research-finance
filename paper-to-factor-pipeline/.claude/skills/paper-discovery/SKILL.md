@@ -1,6 +1,6 @@
 ---
 name: paper-discovery
-description: Search arXiv for relevant quantitative finance papers
+description: Search arXiv for relevant quantitative finance papers. Use when the user says "find papers", "search for papers", "discover papers", "look up papers on [topic]", or "search arXiv".
 ---
 
 # Paper Discovery Instructions

@@ -1,6 +1,6 @@
 ---
 name: hypothesis-refine
-description: Diagnose backtest failure and apply targeted refinement to sandbox/factor.py
+description: Diagnose backtest failure and apply targeted refinement to sandbox/factor.py. Use when the user says "refine hypothesis", "fix the backtest", "diagnose error", "improve Sharpe", "fix IC", or "adjust the factor".
 ---
 
 # Hypothesis Refinement Instructions

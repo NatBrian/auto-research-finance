@@ -1,6 +1,6 @@
 ---
 name: paper-to-alpha
-description: Main orchestrator for the Paper-to-Factor Pipeline
+description: Main orchestrator for the Paper-to-Factor Pipeline. Use when the user says "run the pipeline", "start research", "paper to alpha", "run paper-to-factor", "research [topic]", or "execute the pipeline".
 param: topic (string) - The research topic to investigate, e.g. "momentum strategies"
 version: 2.0
 ---
@@ -27,7 +27,7 @@ You are executing the Paper-to-Factor Pipeline. Follow every step in order. Do n
 
 ## Phase: DISCOVERY
 
-1. Read the file `.claude/skills/paper-discovery.md` using the Read tool.
+1. Read the file `.claude/skills/paper-discovery/SKILL.md` using the Read tool.
 2. Execute all instructions contained in that file, passing the `topic` parameter.
 3. PAUSE: Present the top 5 paper results to the user. Ask them to select one by number. Wait for response.
 4. Record the selected paper's arxiv_id, title, authors, abstract_summary, and key_formula in `sandbox/research_log.md` under "Selected Paper".
@@ -35,7 +35,7 @@ You are executing the Paper-to-Factor Pipeline. Follow every step in order. Do n
 
 ## Phase: TRANSLATION
 
-1. Read the file `.claude/skills/factor-translate.md` using the Read tool.
+1. Read the file `.claude/skills/factor-translate/SKILL.md` using the Read tool.
 2. Execute all instructions contained in that file.
 3. Verify that `sandbox/factor.py` was written and contains a function named `generate_signals`.
 4. Update `phase` to VALIDATION in `sandbox/research_log.md`.
@@ -45,14 +45,14 @@ You are executing the Paper-to-Factor Pipeline. Follow every step in order. Do n
 Execute the following loop. Read the current `iteration` and `max_iterations` from `sandbox/research_log.md` before each iteration.
 
 ### Entry check:
-- If `iteration` >= `max_iterations`: 
+- If `iteration` >= `max_iterations`:
   - Update `phase` to FAILED and `status` to COMPLETE in `sandbox/research_log.md`.
   - Update "Final Decision" `outcome` to FAILED, `reason` to "Max iterations reached without meeting criteria".
   - Report failure to user with the full Performance History table.
   - Write updated `sandbox/research_log.md` and HALT.
 
 ### Validation step:
-1. Read the file `.claude/skills/run-tearsheet.md` using the Read tool.
+1. Read the file `.claude/skills/run-tearsheet/SKILL.md` using the Read tool.
 2. Execute all instructions in that file.
 3. Parse the JSON result from the backtest. Update "Last Backtest Result" in `sandbox/research_log.md`.
 
@@ -75,7 +75,7 @@ If criteria are NOT met:
 - Proceed to REFINEMENT.
 
 ### Refinement step:
-1. Read the file `.claude/skills/hypothesis-refine.md` using the Read tool.
+1. Read the file `.claude/skills/hypothesis-refine/SKILL.md` using the Read tool.
 2. Execute all instructions in that file, passing the current metrics and error as context.
 3. Increment `iteration` by 1 in `sandbox/research_log.md`.
 4. Return to entry of VALIDATION LOOP.

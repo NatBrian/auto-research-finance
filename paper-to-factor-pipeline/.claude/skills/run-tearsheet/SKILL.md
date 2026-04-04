@@ -1,6 +1,6 @@
 ---
 name: run-tearsheet
-description: Execute the backtest and capture structured results
+description: Execute the backtest and capture structured results. Use when the user says "run backtest", "run tearsheet", "backtest the factor", "execute tearsheet", or "check performance".
 ---
 
 # Run Tearsheet Instructions

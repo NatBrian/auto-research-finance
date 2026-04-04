@@ -1,6 +1,6 @@
 ---
 name: factor-translate
-description: Translate a selected paper's signal into executable Python code
+description: Translate a selected paper's signal into executable Python code. Use when the user says "translate the paper", "write the factor", "convert signal to code", "implement the formula", or "generate factor code".
 ---
 
 # Factor Translation Instructions
@@ -56,7 +56,6 @@ def generate_signals(data: pd.DataFrame) -> pd.Series:
         raise ValueError(f"Missing required columns: {missing}")
 
     # --- Signal computation ---
-    # [IMPLEMENTATION GOES HERE]
     # Critical rules:
     # 1. Use .shift(1) before any signal computation to avoid look-ahead bias
     # 2. Use groupby(level='ticker') for any ticker-level operations
