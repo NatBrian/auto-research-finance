@@ -1,0 +1,23 @@
+{
+  "description": "Schema for the MultiIndex market data DataFrame used by all src/ modules",
+  "index": {
+    "level_0": "date",
+    "level_1": "ticker",
+    "date_format": "YYYY-MM-DD",
+    "ticker_format": "NYSE/NASDAQ symbol string"
+  },
+  "columns": {
+    "Open": "float64 — split and dividend adjusted open price",
+    "High": "float64 — split and dividend adjusted daily high",
+    "Low": "float64 — split and dividend adjusted daily low",
+    "Close": "float64 — split and dividend adjusted close price",
+    "Volume": "int64 — shares traded"
+  },
+  "notes": [
+    "Data is adjusted for splits and dividends (auto_adjust=True in yfinance)",
+    "NaN values indicate the ticker was delisted or data is unavailable for that date",
+    "Use .shift(1) before any signal computation to ensure point-in-time integrity",
+    "Cross-sectional operations should use .groupby(level='date')",
+    "Time-series operations should use .groupby(level='ticker')"
+  ]
+}

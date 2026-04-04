@@ -1,0 +1,31 @@
+Ticker,Date_Added,Date_Removed,Notes
+AAPL,1990-01-01,,Active large-cap technology
+MSFT,1994-06-01,,Active large-cap technology
+JPM,1999-01-01,,Active large-cap financials
+JNJ,1990-01-01,,Active large-cap healthcare
+XOM,1990-01-01,,Active large-cap energy
+AMZN,2005-11-18,,Active large-cap consumer
+GOOGL,2006-04-03,,Active large-cap technology
+META,2013-12-23,,Active large-cap technology (added to S&P 2013)
+NVDA,2001-11-30,,Active large-cap semiconductor
+BBBY,2006-01-01,2023-04-23,Delisted — bankruptcy April 2023
+BRK-B,1990-01-01,,Active large-cap conglomerate
+UNH,1990-01-01,,Active large-cap healthcare
+PG,1990-01-01,,Active large-cap consumer staples
+HD,1990-01-01,,Active large-cap retail
+MA,2008-01-01,,Active large-cap financials
+V,2008-01-01,,Active large-cap financials
+BAC,1990-01-01,,Active large-cap financials
+PFE,1990-01-01,,Active large-cap healthcare
+DIS,1990-01-01,,Active large-cap media
+CSCO,1990-01-01,,Active large-cap technology
+VZ,1990-01-01,,Active large-cap telecom
+INTC,1990-01-01,,Active large-cap semiconductor
+WMT,1990-01-01,,Active large-cap retail
+CVX,1990-01-01,,Active large-cap energy
+ABT,1990-01-01,,Active large-cap healthcare
+MRK,1990-01-01,,Active large-cap healthcare
+TMO,1990-01-01,,Active large-cap healthcare
+COST,1990-01-01,,Active large-cap retail
+NEE,1990-01-01,,Active large-cap utilities
+RTX,1990-01-01,,Active large-cap aerospace

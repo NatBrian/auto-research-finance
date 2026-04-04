@@ -1,0 +1,32 @@
+data:
+  start_date: "2015-01-01"
+  end_date: "2023-12-31"
+  train_ratio: 0.60
+  validation_ratio: 0.20
+  test_ratio: 0.20
+  universe_file: "data/universe_sp500_historical.csv"
+  manifest_file: "data/manifest.json"
+  min_coverage_ratio: 0.30
+
+execution:
+  transaction_cost_bps: 10
+  max_position_weight: 0.10
+
+backtest:
+  risk_free_rate: 0.0
+  periods_per_year: 252
+
+thresholds:
+  min_sharpe: 0.7        # Achievable target for 30-ticker research prototype
+  min_ic: 0.02           # Statistically meaningful at this universe size
+  require_positive_alpha: true
+  # Note: tighten to min_sharpe: 1.0, min_ic: 0.05 for production deployment
+
+workflow:
+  max_iterations: 3
+  research_log_path: "sandbox/research_log.md"
+  factor_path: "sandbox/factor.py"
+  output_path: "outputs/final_factor.py"
+
+logging:
+  level: "INFO"

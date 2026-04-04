@@ -1,0 +1,14 @@
+{
+  "mcpServers": {
+    "arxiv": {
+      "command": "python",
+      "args": ["mcp_servers/arxiv_server/server.py"],
+      "description": "ArXiv paper search tools for quantitative finance research"
+    },
+    "backtest": {
+      "command": "python",
+      "args": ["mcp_servers/backtest_server/server.py"],
+      "description": "Backtesting engine with benchmark and ML baseline comparison"
+    }
+  }
+}
