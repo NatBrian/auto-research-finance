@@ -1,54 +1,68 @@
-# Autonomous Claude Code Finance Workflows
+# Auto-Research-Finance
 
-This repository contains algorithmic trading research and development. The system runs natively within **Claude Code** (Anthropic's agentic CLI), utilizing Skill files for orchestration and Model Context Protocol (MCP) servers for tool integration.
+A collection of autonomous AI-driven quantitative finance systems built on **Claude Code** using skills as agents, MCP servers as tool providers, and structured state files as communication buses.
 
 ---
 
-## 📂 Repository Structure
+## Projects
 
-The repository is organized into four top-level folders, each representing a self-contained research workflow:
+| Project | Description |
+|---|---|
+| [**paper-to-factor-pipeline**](./paper-to-factor-pipeline/) | Discovers arXiv papers, translates research into executable trading factors, backtests with survivorship-aware data, and iteratively refines until validation thresholds are met. |
+| [**tradingagents-cc**](./tradingagents-cc/) | Multi-agent trading system (re-implementation of arxiv:2412.20138) with 5 specialized teams — Analysts, Researchers (Bull/Bear debate), Trader, Risk Management, and Portfolio Manager — that analyze a ticker and submit orders to paper/Alpaca/IBKR. |
 
-```text
-/
-├── 01_paper_to_factor_pipeline/   # Academic Research Translation
-├── 02_market_regime_detector/     # (Example: Regime Classification)
-├── 03_portfolio_optimizer/        # (Example: Allocation Optimization)
-├── 04_risk_monitor/               # (Example: Real-time Risk Analytics)
-└── README.md
+---
+
+## Architecture
+
+Both projects share a common design pattern native to **Claude Code**:
+
+```
+┌─────────────────────────────────────────────────────────┐
+│                     Claude Code CLI                      │
+│                                                         │
+│  Skills (.claude/skills/*.md)                           │
+│    └─ Markdown instruction files that define agent roles │
+│                                                         │
+│  State Bus (session/*.md or sandbox/*.md)                │
+│    └─ Structured markdown + embedded JSON               │
+│    └─ All agents read/write this shared file            │
+│                                                         │
+│  MCP Servers (mcp_servers/*/server.py)                  │
+│    └─ Tool providers registered in .claude.json         │
+│    └─ Market data, news, sentiment, exchange, etc.      │
+│                                                         │
+│  Persistence (data/*.db, data/*.json)                   │
+│    └─ SQLite audit trail, portfolio state, cache        │
+└─────────────────────────────────────────────────────────┘
 ```
 
 ---
 
-## 🔄 Workflow Descriptions
+## Prerequisites
 
-### 1. Paper-to-Factor Pipeline
-*Location: `01_paper_to_factor_pipeline/`*
+| Requirement | Version |
+|---|---|
+| Python | 3.10+ |
+| Claude Code CLI | Latest |
 
-This workflow automates the translation of academic theory into production code.
-*   **Input**: A research topic.
-*   **Process**:
-    1.  Autonomously finds relevant academic papers on arXiv.
-    2.  Translates mathematical logic into executable Python trading signals.
-    3.  Backtests against historical data with rigorous data integrity handling.
-    4.  Compares performance against Market Benchmark (SPY) and ML Baselines (XGBoost, Logistic Regression).
-    5.  Iteratively refines the approach.
-*   **Output**: A validated, production-ready Python file.
-
-### 2. [Workflow Name]
-*Location: `02_market_regime_detector/`*
-*(Description to be added based on folder contents)*
-
-### 3. [Workflow Name]
-*Location: `03_portfolio_optimizer/`*
-*(Description to be added based on folder contents)*
-
-### 4. [Workflow Name]
-*Location: `04_risk_monitor/`*
-*(Description to be added based on folder contents)*
+Each project has its own `requirements.txt` and virtual environment. See individual project READMEs for setup instructions.
 
 ---
 
-## ⚠️ Critical Implementation Guidelines
+## Quick Start
 
-1.  **Context**: Ensure you are operating within the correct folder for the specific workflow you intend to run.
-2.  **Dependencies**: Each workflow may require specific MCP server connections or data sources. Check the `skills/` directory inside each folder for specific requirements.
+```bash
+# Clone the repo
+git clone https://github.com/NatBrian/auto-research-finance.git
+cd auto-research-finance
+
+# Pick a project and follow its README
+cd paper-to-factor-pipeline/   # or tradingagents-cc/
+```
+
+---
+
+## Disclaimer
+
+These systems are for **research and educational purposes only**. They are not financial advice. Past performance does not guarantee future results. Use real-money exchange adapters at your own risk.
