@@ -1,0 +1,24 @@
+{
+  "mcpServers": {
+    "market_data": {
+      "command": "python",
+      "args": ["mcp_servers/market_data_server/server.py"],
+      "description": "Market data, financials, and technical indicators"
+    },
+    "news": {
+      "command": "python",
+      "args": ["mcp_servers/news_server/server.py"],
+      "description": "News, SEC filings, and event calendar"
+    },
+    "sentiment": {
+      "command": "python",
+      "args": ["mcp_servers/sentiment_server/server.py"],
+      "description": "Social sentiment and text sentiment scoring"
+    },
+    "exchange": {
+      "command": "python",
+      "args": ["mcp_servers/exchange_server/server.py"],
+      "description": "Order submission and portfolio management (paper/Alpaca/IBKR)"
+    }
+  }
+}

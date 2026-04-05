@@ -1,2 +1,21 @@
+# AI tool directories
 /.codex
 /.qwen
+
+# Python bytecode
+__pycache__/
+*.py[cod]
+
+# Virtual environments
+.venv/
+.conda/
+
+# Environment secrets
+.env
+.env.local
+
+# OS / Editor
+.DS_Store
+Thumbs.db
+*.swp
+*~

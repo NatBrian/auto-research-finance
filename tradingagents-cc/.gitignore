@@ -1,0 +1,71 @@
+# Python bytecode and caches
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Build / packaging
+.Python
+build/
+dist/
+*.egg
+*.egg-info/
+.eggs/
+*.egg-link
+pip-wheel-metadata/
+
+# Native extensions
+*.so
+
+# Virtual environments
+.venv/
+venv/
+env/
+ENV/
+.conda/
+
+# Tool caches
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+.coverage.*
+htmlcov/
+.ipynb_checkpoints/
+
+# Editors / OS
+.DS_Store
+Thumbs.db
+desktop.ini
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Environment files (secrets — never commit)
+.env
+.env.local
+
+# Runtime data artifacts
+data/memory.db
+data/cache/*
+!data/cache/.gitkeep
+
+# Paper trading portfolio state (changes every run)
+data/paper_portfolio.json
+
+# Session state (regenerated each run)
+session/trading_session.md
+
+# Output reports (regenerated each run)
+outputs/reports/*
+!outputs/reports/.gitkeep
+!outputs/.gitkeep
+
+# Log files
+*.log
+*.tmp
+*.bak
+
+# Parquet price cache
+*.parquet

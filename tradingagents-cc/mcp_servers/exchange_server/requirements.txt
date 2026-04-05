@@ -1,0 +1,6 @@
+yfinance>=0.2.36
+alpaca-trade-api>=3.0.0
+ib_insync>=0.9.86
+mcp>=1.0.0
+PyYAML>=6.0
+python-dotenv>=1.0.0

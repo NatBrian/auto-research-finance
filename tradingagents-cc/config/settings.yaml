@@ -1,0 +1,43 @@
+exchange:
+  default_adapter: "paper"         # Options: paper | alpaca | ibkr
+  paper:
+    initial_cash: 100000.0          # Starting paper portfolio cash
+    slippage_bps: 5                 # Simulated slippage in basis points
+  alpaca:
+    base_url: "https://paper-api.alpaca.markets"  # Use live URL for live trading
+  ibkr:
+    host: "127.0.0.1"
+    port: 7497                      # 7497 = TWS paper, 7496 = TWS live, 4002 = Gateway
+    client_id: 1
+
+trading:
+  max_position_size_pct: 10.0       # Maximum % of portfolio in a single position
+  max_concentration_pct: 15.0       # Hard cap on any single position
+  min_conviction_score: 2.0         # Minimum trader conviction to place order
+  block_extreme_risk: true          # Reject orders with EXTREME risk rating
+
+research:
+  debate_rounds: 2                  # Bull/Bear researcher debate rounds
+  risk_debate_rounds: 2             # Risk team debate rounds
+  fundamental_lookback_quarters: 4
+  news_lookback_days: 14
+  sentiment_lookback_days: 7
+  technical_lookback_days: 365
+
+data:
+  cache_dir: "data/cache"
+  memory_db_path: "data/memory.db"
+  paper_portfolio_path: "data/paper_portfolio.json"
+
+session:
+  session_file: "session/trading_session.md"
+  output_dir: "outputs/reports"
+
+logging:
+  level: "INFO"
+
+apis:
+  newsapi_key_env: "NEWSAPI_KEY"         # Set this env var for real news data
+  alpha_vantage_key_env: "ALPHA_VANTAGE_KEY"  # Optional enhanced data
+  reddit_client_id_env: "REDDIT_CLIENT_ID"    # Optional Reddit sentiment
+  reddit_client_secret_env: "REDDIT_CLIENT_SECRET"
