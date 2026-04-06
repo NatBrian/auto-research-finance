@@ -14,15 +14,26 @@ from typing import Any
 import numpy as np
 import pandas as pd
 import yfinance as yf
+from curl_cffi.requests import Session
 
 from src.utils import (
     DataUnavailableError,
     get_project_root,
+    load_config,
     safe_json_dumps,
     setup_logging,
 )
 
 logger = setup_logging()
+
+
+def _get_ssl_verify() -> bool:
+    """Read SSL verify setting from config. Defaults to True for security."""
+    try:
+        config = load_config()
+        return config.get("ssl", {}).get("verify", True)
+    except Exception:
+        return True
 
 
 class MarketDataClient:
@@ -31,6 +42,8 @@ class MarketDataClient:
     def __init__(self) -> None:
         self._cache_dir = get_project_root() / "data" / "cache"
         self._cache_dir.mkdir(parents=True, exist_ok=True)
+        ssl_verify = _get_ssl_verify()
+        self._session = Session(verify=ssl_verify)
 
     # ------------------------------------------------------------------
     # Price History
@@ -80,6 +93,7 @@ class MarketDataClient:
                 interval=interval,
                 auto_adjust=True,
                 progress=False,
+                session=self._session,
             )
         except Exception as exc:
             raise DataUnavailableError(
@@ -112,7 +126,7 @@ class MarketDataClient:
     def get_financials(self, ticker: str, date: str) -> dict[str, Any]:
         """Return income statement, balance sheet, and cash flow data."""
         try:
-            t = yf.Ticker(ticker)
+            t = yf.Ticker(ticker, session=self._session)
             result = {
                 "income_statement": self._df_to_safe(t.income_stmt),
                 "balance_sheet": self._df_to_safe(t.balance_sheet),
@@ -131,7 +145,7 @@ class MarketDataClient:
     def get_valuation_metrics(self, ticker: str, date: str) -> dict[str, Any]:
         """Extract key valuation ratios from yfinance info."""
         try:
-            info = yf.Ticker(ticker).info or {}
+            info = yf.Ticker(ticker, session=self._session).info or {}
         except Exception as exc:
             raise DataUnavailableError(
                 f"Failed to fetch valuation metrics for {ticker}: {exc}"
@@ -151,7 +165,7 @@ class MarketDataClient:
     def get_earnings_history(self, ticker: str, n_quarters: int = 8) -> list[dict]:
         """Return recent quarterly earnings surprises."""
         try:
-            t = yf.Ticker(ticker)
+            t = yf.Ticker(ticker, session=self._session)
             # Try earnings_dates first (newer yfinance)
             try:
                 eh = t.earnings_dates
@@ -199,7 +213,7 @@ class MarketDataClient:
     ) -> list[dict]:
         """Return insider buy/sell transactions within lookback window."""
         try:
-            t = yf.Ticker(ticker)
+            t = yf.Ticker(ticker, session=self._session)
             txns = t.insider_transactions
             if txns is None or txns.empty:
                 return []
@@ -244,7 +258,7 @@ class MarketDataClient:
     def get_options_flow(self, ticker: str, date: str) -> dict[str, Any]:
         """Compute put/call ratio and detect unusual options activity."""
         try:
-            t = yf.Ticker(ticker)
+            t = yf.Ticker(ticker, session=self._session)
             expirations = t.options
             if not expirations:
                 return {"put_call_ratio": None, "unusual_activity": False, "net_delta": 0.0}
@@ -288,7 +302,7 @@ class MarketDataClient:
     def get_short_interest(self, ticker: str) -> dict[str, Any]:
         """Return short interest data from yfinance info."""
         try:
-            info = yf.Ticker(ticker).info or {}
+            info = yf.Ticker(ticker, session=self._session).info or {}
             return {
                 "short_interest_pct": info.get("shortPercentOfFloat"),
                 "days_to_cover": info.get("shortRatio"),
@@ -304,7 +318,7 @@ class MarketDataClient:
     def get_analyst_ratings(self, ticker: str) -> dict[str, Any]:
         """Return analyst consensus and price targets."""
         try:
-            t = yf.Ticker(ticker)
+            t = yf.Ticker(ticker, session=self._session)
             info = t.info or {}
 
             # Recommendations summary

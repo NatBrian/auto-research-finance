@@ -6,15 +6,31 @@ Primary: NewsAPI (if key available)  |  Fallback: DuckDuckGo search.
 """
 
 import os
+import urllib3
 from datetime import datetime, timedelta
 from typing import Any
 
 import pandas as pd
 import requests
 
-from src.utils import setup_logging
+from src.utils import load_config, setup_logging
 
 logger = setup_logging()
+
+
+def _get_ssl_verify() -> bool:
+    """Read SSL verify setting from config. Defaults to True for security."""
+    try:
+        config = load_config()
+        return config.get("ssl", {}).get("verify", True)
+    except Exception:
+        return True
+
+
+# Disable SSL warnings only if verify=False in config
+_ssl_verify = _get_ssl_verify()
+if not _ssl_verify:
+    urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 
 class NewsFetcher:
@@ -22,6 +38,8 @@ class NewsFetcher:
 
     def __init__(self) -> None:
         self._newsapi_key = os.environ.get("NEWSAPI_KEY")
+        self._session = requests.Session()
+        self._session.verify = _ssl_verify
 
     # ------------------------------------------------------------------
     # Company News
@@ -181,7 +199,7 @@ class NewsFetcher:
             # Use the company tickers JSON from SEC
             tickers_url = "https://www.sec.gov/files/company_tickers.json"
             headers = {"User-Agent": "TradingAgentsCC/1.0 research@example.com"}
-            resp = requests.get(tickers_url, headers=headers, timeout=10)
+            resp = self._session.get(tickers_url, headers=headers, timeout=10)
             if resp.status_code == 200:
                 data = resp.json()
                 cik = None
@@ -191,7 +209,7 @@ class NewsFetcher:
                         break
                 if cik:
                     sub_url = f"https://data.sec.gov/submissions/CIK{cik}.json"
-                    resp2 = requests.get(sub_url, headers=headers, timeout=10)
+                    resp2 = self._session.get(sub_url, headers=headers, timeout=10)
                     if resp2.status_code == 200:
                         sub_data = resp2.json()
                         recent = sub_data.get("filings", {}).get("recent", {})

@@ -70,25 +70,25 @@ You are executing the TradingAgents-CC pipeline. You ARE the multi-agent orchest
 For each analyst below, read the skill file and execute it fully before moving to the next. Write the resulting report JSON into the corresponding section of `session/trading_session.md` before proceeding.
 
 ### Step A1: Fundamentals Analyst
-1. Read `.claude/skills/analyst-fundamentals.md` using the Read tool.
+1. Read `.claude/skills/analyst-fundamentals/SKILL.md` using the Read tool.
 2. Execute all instructions in that file for `ticker` and `date`.
 3. Write the returned JSON report into "Fundamentals Report" in `session/trading_session.md`.
 4. Append audit entry: `| {now} | ANALYSIS | FundamentalsAnalyst | Report written | overall_score={report.overall_score} |`
 
 ### Step A2: Sentiment Analyst
-1. Read `.claude/skills/analyst-sentiment.md` using the Read tool.
+1. Read `.claude/skills/analyst-sentiment/SKILL.md` using the Read tool.
 2. Execute all instructions in that file.
 3. Write the returned JSON report into "Sentiment Report" in `session/trading_session.md`.
 4. Append audit entry.
 
 ### Step A3: News Analyst
-1. Read `.claude/skills/analyst-news.md` using the Read tool.
+1. Read `.claude/skills/analyst-news/SKILL.md` using the Read tool.
 2. Execute all instructions in that file.
 3. Write the returned JSON report into "News Report" in `session/trading_session.md`.
 4. Append audit entry.
 
 ### Step A4: Technical Analyst
-1. Read `.claude/skills/analyst-technical.md` using the Read tool.
+1. Read `.claude/skills/analyst-technical/SKILL.md` using the Read tool.
 2. Execute all instructions in that file.
 3. Write the returned JSON report into "Technical Report" in `session/trading_session.md`.
 4. Append audit entry.
@@ -101,7 +101,7 @@ For each analyst below, read the skill file and execute it fully before moving t
 
 ## Phase: RESEARCH (Bull/Bear Debate)
 
-1. Read `.claude/skills/researcher-debate.md` using the Read tool.
+1. Read `.claude/skills/researcher-debate/SKILL.md` using the Read tool.
 2. Execute all instructions in that file, passing the full analyst reports and the `debate_rounds` config value.
 3. Write the Bull Case, Bear Case, Debate Transcript, and Researcher Verdict into `session/trading_session.md`.
 4. Update `phase` to TRADING.
@@ -111,7 +111,7 @@ For each analyst below, read the skill file and execute it fully before moving t
 
 ## Phase: TRADING (Trader Decision)
 
-1. Read `.claude/skills/trader-decision.md` using the Read tool.
+1. Read `.claude/skills/trader-decision/SKILL.md` using the Read tool.
 2. Execute all instructions in that file.
 3. Write the Trader Decision section of `session/trading_session.md` including action, quantity, reasoning, and conviction_score.
 4. Update `phase` to RISK_REVIEW.
@@ -121,7 +121,7 @@ For each analyst below, read the skill file and execute it fully before moving t
 
 ## Phase: RISK_REVIEW (Risk Management Debate)
 
-1. Read `.claude/skills/risk-debate.md` using the Read tool.
+1. Read `.claude/skills/risk-debate/SKILL.md` using the Read tool.
 2. Execute all instructions in that file.
 3. Write the Risk Debate Transcript and Risk Verdict into `session/trading_session.md`.
 4. Update `phase` to PM_APPROVAL.
@@ -131,7 +131,7 @@ For each analyst below, read the skill file and execute it fully before moving t
 
 ## Phase: PM_APPROVAL (Portfolio Manager)
 
-1. Read `.claude/skills/portfolio-manager.md` using the Read tool.
+1. Read `.claude/skills/portfolio-manager/SKILL.md` using the Read tool.
 2. Execute all instructions in that file.
 3. Write the Portfolio Manager Decision into `session/trading_session.md`.
 

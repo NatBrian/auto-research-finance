@@ -11,6 +11,10 @@ PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
+# Load .env file before any other imports
+from dotenv import load_dotenv
+load_dotenv(PROJECT_ROOT / ".env")
+
 import json
 from mcp.server.fastmcp import FastMCP
 

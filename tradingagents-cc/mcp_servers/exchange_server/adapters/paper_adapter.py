@@ -12,10 +12,24 @@ from pathlib import Path
 from typing import Any
 
 import yfinance as yf
+from curl_cffi.requests import Session
 
-from src.utils import get_project_root, setup_logging
+from src.utils import get_project_root, load_config, setup_logging
 
 logger = setup_logging()
+
+
+def _get_ssl_verify() -> bool:
+    """Read SSL verify setting from config. Defaults to True for security."""
+    try:
+        config = load_config()
+        return config.get("ssl", {}).get("verify", True)
+    except Exception:
+        return True
+
+
+_SSL_VERIFY = _get_ssl_verify()
+_SSL_SESSION = Session(verify=_SSL_VERIFY)
 
 
 class PaperAdapter:
@@ -94,17 +108,28 @@ class PaperAdapter:
 
         # Get current market price
         try:
-            info = yf.Ticker(ticker).info
+            info = yf.Ticker(ticker, session=_SSL_SESSION).info
             current_price = info.get("currentPrice") or info.get("regularMarketPrice")
             if current_price is None:
-                hist = yf.download(ticker, period="1d", progress=False)
+                hist = yf.download(ticker, period="1d", progress=False, session=_SSL_SESSION)
                 if hist is not None and not hist.empty:
                     current_price = float(hist["Close"].iloc[-1])
         except Exception as exc:
-            return {
-                "status": "error",
-                "message": f"Cannot get current price for {ticker}: {exc}",
-            }
+            # Fallback: try without session (some environments work differently)
+            try:
+                hist = yf.download(ticker, period="5d", progress=False)
+                if hist is not None and not hist.empty:
+                    current_price = float(hist["Close"].iloc[-1])
+                else:
+                    return {
+                        "status": "error",
+                        "message": f"Cannot get current price for {ticker}: {exc}",
+                    }
+            except Exception as exc2:
+                return {
+                    "status": "error",
+                    "message": f"Cannot get current price for {ticker}: {exc2}",
+                }
 
         if current_price is None:
             return {"status": "error", "message": f"No price available for {ticker}"}
@@ -280,9 +305,18 @@ class PaperAdapter:
         positions = self._portfolio.get("positions", {})
         for ticker, pos in positions.items():
             try:
-                info = yf.Ticker(ticker).info
+                info = yf.Ticker(ticker, session=_SSL_SESSION).info
                 price = info.get("currentPrice") or info.get("regularMarketPrice")
                 if price:
                     pos["current_value"] = round(float(price) * pos["quantity"], 2)
             except Exception:
-                pos["current_value"] = pos["quantity"] * pos["avg_price"]
+                # Fallback: try without session
+                try:
+                    hist = yf.download(ticker, period="1d", progress=False)
+                    if hist is not None and not hist.empty:
+                        price = float(hist["Close"].iloc[-1])
+                        pos["current_value"] = round(price * pos["quantity"], 2)
+                    else:
+                        pos["current_value"] = pos["quantity"] * pos["avg_price"]
+                except Exception:
+                    pos["current_value"] = pos["quantity"] * pos["avg_price"]

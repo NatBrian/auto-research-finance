@@ -95,6 +95,8 @@ TradingAgents-CC is a native Claude Code re-implementation of the [TauricResearc
 
 ## 4. Installation
 
+### 4.1 Clone and Setup Python Environment
+
 ```bash
 # Clone the repository
 git clone <repo-url>
@@ -118,6 +120,82 @@ copy .env.example .env   # Windows
 
 # Edit .env with your API keys (all optional for paper trading)
 ```
+
+### 4.2 Install Claude Code CLI
+
+Ensure you have Claude Code CLI installed. See [official documentation](https://docs.anthropic.com/en/docs/claude-code) for installation instructions.
+
+```bash
+# Verify Claude Code is installed
+claude --version
+```
+
+### 4.3 Install TradingAgents-CC Skills
+
+The trading agents are packaged as Claude Code skills. To install them:
+
+**Option A: Global Installation (Recommended)**
+
+Copy the `.claude/skills` folder to your global Claude skills directory:
+
+```bash
+# macOS/Linux
+cp -r .claude/skills/* ~/.claude/skills/
+
+# Windows (PowerShell)
+Copy-Item -Recurse ".claude\skills\*" "$env:USERPROFILE\.claude\skills\"
+```
+
+**Option B: Project-Local Installation**
+
+The skills are already in `.claude/skills/` within this project. When you run Claude Code from this directory, it will automatically detect and load these skills.
+
+**Verify Skills Are Installed:**
+
+```bash
+claude /help
+# Look for skills like: trade-now, analyst-fundamentals, analyst-sentiment, etc.
+```
+
+### 4.4 Configure MCP Servers
+
+The MCP servers are automatically started by Claude Code when defined in `.claude.json`. No manual configuration is needed if running from this project directory.
+
+The `.claude.json` file configures four MCP servers:
+
+| Server | Purpose | Tools Provided |
+|--------|---------|----------------|
+| `market_data` | Market data, financials, technical indicators | `get_financials`, `get_valuation_metrics`, `compute_indicators_tool`, etc. |
+| `news` | News, SEC filings, event calendar | `search_company_news`, `search_macro_news`, `get_recent_sec_filings`, etc. |
+| `sentiment` | Social sentiment, text scoring | `get_social_sentiment`, `get_options_flow`, `get_short_interest`, etc. |
+| `exchange` | Order submission, portfolio management | `submit_order`, `get_portfolio_summary`, `get_current_positions`, etc. |
+
+**To use MCP servers globally**, add the server configurations to your global `~/.claude.json`:
+
+```json
+{
+  "mcpServers": {
+    "market_data": {
+      "command": "python",
+      "args": ["/absolute/path/to/tradingagents-cc/mcp_servers/market_data_server/server.py"]
+    },
+    "news": {
+      "command": "python",
+      "args": ["/absolute/path/to/tradingagents-cc/mcp_servers/news_server/server.py"]
+    },
+    "sentiment": {
+      "command": "python",
+      "args": ["/absolute/path/to/tradingagents-cc/mcp_servers/sentiment_server/server.py"]
+    },
+    "exchange": {
+      "command": "python",
+      "args": ["/absolute/path/to/tradingagents-cc/mcp_servers/exchange_server/server.py"]
+    }
+  }
+}
+```
+
+> **Note**: Replace `/absolute/path/to/tradingagents-cc` with the actual absolute path to your cloned repository.
 
 ---
 
@@ -186,14 +264,81 @@ python mcp_servers/exchange_server/server.py
 
 ## 7. Running the Pipeline
 
-```bash
-claude run-skill trade-now --param ticker="NVDA" --param date="2024-05-10" --param exchange="paper"
+### 7.1 Full Pipeline (Recommended)
+
+Run the complete multi-agent trading pipeline with a single command:
+
+```
+/trade-now ticker="NVDA" date="2024-05-10" exchange="paper"
 ```
 
 Or with defaults (today's date, paper exchange):
-```bash
-claude run-skill trade-now --param ticker="AAPL"
 ```
+/trade-now ticker="AAPL"
+```
+
+This executes all phases in sequence:
+1. **ANALYSIS** — All four analysts run in parallel
+2. **RESEARCH** — Bull/Bear researcher debate
+3. **TRADING** — Trader synthesizes and decides
+4. **RISK_REVIEW** — Risk team debate
+5. **PM_APPROVAL** — Portfolio Manager final approval and order submission
+
+### 7.2 Running Individual Skills (Step-by-Step)
+
+You can also execute each skill separately for debugging or manual control:
+
+**Step 1: Run Individual Analysts**
+```
+/analyst-fundamentals
+/analyst-sentiment
+/analyst-news
+/analyst-technical
+```
+
+Each analyst reads `session/trading_session.md` for the ticker and date, then writes their report back to the same file.
+
+**Step 2: Run Researcher Debate**
+```
+/researcher-debate
+```
+
+Synthesizes all four analyst reports into a Bull vs Bear debate and produces a verdict.
+
+**Step 3: Run Trader Decision**
+```
+/trader-decision
+```
+
+Aggregates all signals and produces an actionable trading decision with position sizing.
+
+**Step 4: Run Risk Debate**
+```
+/risk-debate
+```
+
+Three risk personas (Risky, Neutral, Safe) debate and adjust the trader's plan.
+
+**Step 5: Run Portfolio Manager**
+```
+/portfolio-manager
+```
+
+Final approval, order validation, and submission to the exchange.
+
+### 7.3 Available Skills Summary
+
+| Skill | Description | Phase |
+|-------|-------------|-------|
+| `/trade-now` | Master orchestrator — runs full pipeline | All phases |
+| `/analyst-fundamentals` | Evaluates financials, valuation, DCF | ANALYSIS |
+| `/analyst-sentiment` | Social media, options flow, short interest | ANALYSIS |
+| `/analyst-news` | Company/macro news, SEC filings, catalysts | ANALYSIS |
+| `/analyst-technical` | Technical indicators, chart patterns | ANALYSIS |
+| `/researcher-debate` | Bull vs Bear structured debate | RESEARCH |
+| `/trader-decision` | Signal aggregation and position sizing | TRADING |
+| `/risk-debate` | Risk team (Risky/Neutral/Safe) debate | RISK_REVIEW |
+| `/portfolio-manager` | Final approval and order submission | PM_APPROVAL |
 
 ---
 
