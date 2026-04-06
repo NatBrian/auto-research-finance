@@ -87,7 +87,8 @@ TradingAgents-CC is a native Claude Code re-implementation of the [TauricResearc
 - **Claude Code CLI** (latest)
 - **API Keys** (optional — free fallbacks exist for all data sources):
   - NewsAPI key for premium news data
-  - Reddit API credentials for sentiment analysis
+  - Reddit API credentials for social sentiment analysis
+  - Alpha Vantage key for NEWS_SENTIMENT API
   - Alpaca API keys (for live/paper trading via Alpaca)
   - IB Gateway/TWS running (for IBKR trading)
 
@@ -95,67 +96,38 @@ TradingAgents-CC is a native Claude Code re-implementation of the [TauricResearc
 
 ## 4. Installation
 
-### 4.1 Clone and Setup Python Environment
+### 4.1 Clone and Setup
 
 ```bash
 # Clone the repository
 git clone <repo-url>
 cd tradingagents-cc
 
-# Create virtual environment
+# Create and activate virtual environment
 python -m venv .venv
-
-# Activate (Windows)
-.venv\Scripts\activate
-
-# Activate (macOS/Linux)
-# source .venv/bin/activate
+source .venv/bin/activate  # macOS/Linux
+# .venv\Scripts\activate   # Windows
 
 # Install dependencies
 pip install -r requirements.txt
 
-# Copy environment template
-copy .env.example .env   # Windows
-# cp .env.example .env   # macOS/Linux
-
-# Edit .env with your API keys (all optional for paper trading)
+# Copy environment template and add your API keys
+cp .env.example .env
 ```
 
 ### 4.2 Install Claude Code CLI
-
-Ensure you have Claude Code CLI installed. See [official documentation](https://docs.anthropic.com/en/docs/claude-code) for installation instructions.
 
 ```bash
 # Verify Claude Code is installed
 claude --version
 ```
 
-### 4.3 Install TradingAgents-CC Skills
-
-The trading agents are packaged as Claude Code skills. To install them:
-
-**Option A: Global Installation (Recommended)**
-
-Copy the `.claude/skills` folder to your global Claude skills directory:
+### 4.3 Install Skills
 
 ```bash
-# macOS/Linux
 cp -r .claude/skills/* ~/.claude/skills/
-
-# Windows (PowerShell)
-Copy-Item -Recurse ".claude\skills\*" "$env:USERPROFILE\.claude\skills\"
 ```
 
-**Option B: Project-Local Installation**
-
-The skills are already in `.claude/skills/` within this project. When you run Claude Code from this directory, it will automatically detect and load these skills.
-
-**Verify Skills Are Installed:**
-
-```bash
-claude /help
-# Look for skills like: trade-now, analyst-fundamentals, analyst-sentiment, etc.
-```
 
 ### 4.4 Configure MCP Servers
 
@@ -167,8 +139,34 @@ The `.claude.json` file configures four MCP servers:
 |--------|---------|----------------|
 | `market_data` | Market data, financials, technical indicators | `get_financials`, `get_valuation_metrics`, `compute_indicators_tool`, etc. |
 | `news` | News, SEC filings, event calendar | `search_company_news`, `search_macro_news`, `get_recent_sec_filings`, etc. |
-| `sentiment` | Social sentiment, text scoring | `get_social_sentiment`, `get_options_flow`, `get_short_interest`, etc. |
+| `sentiment` | Social sentiment, text scoring | `get_social_sentiment`, `get_combined_sentiment` (Reddit + Alpha Vantage + DuckDuckGo fallback) |
 | `exchange` | Order submission, portfolio management | `submit_order`, `get_portfolio_summary`, `get_current_positions`, etc. |
+
+**News Data Sources** (merged for comprehensive coverage):
+
+| Source | Company News | Macro News | API Key Required |
+|--------|--------------|------------|------------------|
+| Yahoo Finance (yfinance) | Primary | — | No |
+| NewsAPI | Primary | Primary | Yes (`NEWSAPI_KEY`) |
+| DuckDuckGo | Fallback/Supplement | Fallback/Supplement | No |
+
+**How sources are merged:**
+- **Company News**: Yahoo Finance + NewsAPI are both fetched and deduplicated. DuckDuckGo supplements if fewer than 2 primary sources succeed.
+- **Macro News**: NewsAPI + DuckDuckGo are both fetched and merged.
+- **Fallback combinations**: `yahoo+newsapi` → `yahoo+duckduckgo` → `newsapi+duckduckgo` → `duckduckgo`
+
+**Sentiment Data Sources** (always combined):
+
+| Source | Data Type | API Key Required |
+|--------|-----------|------------------|
+| Reddit (PRAW) | Social media posts from r/wallstreetbets, r/investing, r/stocks | Yes (`REDDIT_CLIENT_ID`, `REDDIT_CLIENT_SECRET`) |
+| Alpha Vantage | NEWS_SENTIMENT API with pre-scored sentiment | Yes (`ALPHA_VANTAGE_KEY`) |
+| DuckDuckGo | News articles as sentiment proxy | No |
+
+**How sentiment sources are merged:**
+- All available sources are fetched and combined: `reddit + alpha_vantage + duckduckgo`
+- Each source fails gracefully without blocking others
+- Result combinations: `reddit+alpha_vantage+duckduckgo` → `reddit+alpha_vantage` → `alpha_vantage+duckduckgo` → `duckduckgo`
 
 **To use MCP servers globally**, add the server configurations to your global `~/.claude.json`:
 
@@ -240,33 +238,9 @@ exchange:
 
 ---
 
-## 6. Starting MCP Servers
+## 6. Running the Pipeline
 
-All four MCP servers must be running for the pipeline to execute. Open four terminal windows:
-
-```bash
-# Terminal 1: Market Data
-python mcp_servers/market_data_server/server.py
-
-# Terminal 2: News
-python mcp_servers/news_server/server.py
-
-# Terminal 3: Sentiment
-python mcp_servers/sentiment_server/server.py
-
-# Terminal 4: Exchange
-python mcp_servers/exchange_server/server.py
-```
-
-> **Note**: When using Claude Code CLI, the MCP servers defined in `.claude.json` are started automatically. The manual startup above is only needed for standalone testing.
-
----
-
-## 7. Running the Pipeline
-
-### 7.1 Full Pipeline (Recommended)
-
-Run the complete multi-agent trading pipeline with a single command:
+### Full Pipeline
 
 ```
 /trade-now ticker="NVDA" date="2024-05-10" exchange="paper"
@@ -277,56 +251,14 @@ Or with defaults (today's date, paper exchange):
 /trade-now ticker="AAPL"
 ```
 
-This executes all phases in sequence:
-1. **ANALYSIS** — All four analysts run in parallel
+**Pipeline phases:**
+1. **ANALYSIS** — Fundamentals → Sentiment → News → Technical analysts
 2. **RESEARCH** — Bull/Bear researcher debate
 3. **TRADING** — Trader synthesizes and decides
 4. **RISK_REVIEW** — Risk team debate
 5. **PM_APPROVAL** — Portfolio Manager final approval and order submission
 
-### 7.2 Running Individual Skills (Step-by-Step)
-
-You can also execute each skill separately for debugging or manual control:
-
-**Step 1: Run Individual Analysts**
-```
-/analyst-fundamentals
-/analyst-sentiment
-/analyst-news
-/analyst-technical
-```
-
-Each analyst reads `session/trading_session.md` for the ticker and date, then writes their report back to the same file.
-
-**Step 2: Run Researcher Debate**
-```
-/researcher-debate
-```
-
-Synthesizes all four analyst reports into a Bull vs Bear debate and produces a verdict.
-
-**Step 3: Run Trader Decision**
-```
-/trader-decision
-```
-
-Aggregates all signals and produces an actionable trading decision with position sizing.
-
-**Step 4: Run Risk Debate**
-```
-/risk-debate
-```
-
-Three risk personas (Risky, Neutral, Safe) debate and adjust the trader's plan.
-
-**Step 5: Run Portfolio Manager**
-```
-/portfolio-manager
-```
-
-Final approval, order validation, and submission to the exchange.
-
-### 7.3 Available Skills Summary
+### Individual Skills
 
 | Skill | Description | Phase |
 |-------|-------------|-------|
@@ -342,7 +274,7 @@ Final approval, order validation, and submission to the exchange.
 
 ---
 
-## 8. Understanding the Output
+## 7. Understanding the Output
 
 ### Session State File
 `session/trading_session.md` — Contains the full state of the current session including all analyst reports, debate transcripts, decisions, and audit trail.
@@ -363,13 +295,14 @@ orders = get_order_history("NVDA", limit=10)
 
 ---
 
-## 9. Configuration Reference
+## 8. Configuration Reference
 
 | Key | Default | Description |
 |---|---|---|
 | `exchange.default_adapter` | `"paper"` | Exchange adapter: paper, alpaca, ibkr |
 | `exchange.paper.initial_cash` | `100000.0` | Starting cash for paper trading |
 | `exchange.paper.slippage_bps` | `5` | Simulated slippage in basis points |
+| `ssl.verify` | `true` | SSL certificate verification. Set to `false` for corporate proxy environments with self-signed certificates |
 | `trading.max_position_size_pct` | `10.0` | Max % of portfolio in one position |
 | `trading.max_concentration_pct` | `15.0` | Hard cap on single position % |
 | `trading.min_conviction_score` | `2.0` | Min trader conviction to place order |
@@ -384,7 +317,7 @@ orders = get_order_history("NVDA", limit=10)
 
 ---
 
-## 10. Agent Roles Reference
+## 9. Agent Roles Reference
 
 | Skill File | Agent Role | Description |
 |---|---|---|
@@ -400,7 +333,7 @@ orders = get_order_history("NVDA", limit=10)
 
 ---
 
-## 11. Research Disclaimer
+## 10. Research Disclaimer
 
 > **THIS SOFTWARE IS PROVIDED FOR RESEARCH AND EDUCATIONAL PURPOSES ONLY.**
 >
@@ -414,19 +347,20 @@ orders = get_order_history("NVDA", limit=10)
 
 ---
 
-## 12. Limitations
+## 11. Limitations
 
 - **yfinance reliability**: Free data source with potential rate limits, data gaps, and latency. Not suitable for high-frequency or latency-sensitive strategies.
-- **DuckDuckGo rate limits**: Fallback news/sentiment searches may be rate-limited under heavy usage.
+- **News source fallbacks**: When Yahoo Finance or NewsAPI fail (rate limits, SSL issues in corporate environments), the system falls back to DuckDuckGo which has its own rate limits.
+- **SSL verification**: For corporate proxy environments with self-signed certificates, set `ssl.verify: false` in `config/settings.yaml`. This affects yfinance, NewsAPI, Reddit, and other HTTPS requests.
 - **Paper vs. Real**: Paper trading does not account for order book depth, partial fills, market impact, or real-time price changes during execution.
 - **Single-model reasoning**: All agent roles are played by the same Claude instance — no independent model diversity.
 - **No real-time streaming**: The system analyzes a single snapshot in time, not a continuous data feed.
 - **Indicator accuracy**: pandas-ta computations may differ slightly from professional charting platforms.
-- **Sentiment proxy**: Without Reddit/Twitter API credentials, sentiment relies on DuckDuckGo news as a proxy — less accurate than direct social data.
+- **Sentiment data**: Without Reddit or Alpha Vantage credentials, sentiment relies on DuckDuckGo news as a proxy — less accurate than direct social data or pre-scored sentiment APIs.
 
 ---
 
-## Running Tests
+## 12. Running Tests
 
 ```bash
 python -m pytest tests/ -v

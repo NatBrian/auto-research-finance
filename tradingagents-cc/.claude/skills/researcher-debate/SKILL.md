@@ -9,9 +9,14 @@ description: Bull and Bear researcher debate to synthesize analyst reports into 
 You are facilitating a structured debate between a Bullish Researcher and a Bearish Researcher. Both have read all four analyst reports. They will argue their cases for `debate_rounds` rounds, then you will produce a balanced verdict.
 
 ## Input
-Read `session/trading_session.md`:
-- All four analyst reports (Fundamentals, Sentiment, News, Technical)
-- `ticker`, `analysis_date`, `debate_rounds`
+Read the session file:
+1. Read `session/.current_session_id` to get the current session ID
+2. Then read `session/{session_id}/trading_session.md`
+
+From the session file, extract:
+- All four analyst reports (Fundamentals Report, Sentiment Report, News Report, Technical Report) — each is a JSON block under its respective `##` heading
+- `ticker`, `analysis_date` from the Metadata section
+- `debate_rounds` from the Metadata section (default: 2 if not found)
 
 ## Pre-Debate: Individual Position Formation
 
@@ -77,8 +82,8 @@ Key Arguments:
 ```
 
 ## Output
-Write to `session/trading_session.md`:
-- Bull Case: Bull's final position
-- Bear Case: Bear's final position
-- Debate Transcript: Full round-by-round transcript
-- Researcher Verdict: Structured verdict block
+Write to `session/{session_id}/trading_session.md` (where `{session_id}` is read from `session/.current_session_id`):
+- Replace the `### Bull Case` section content with Bull's final position
+- Replace the `### Bear Case` section content with Bear's final position
+- Replace the `### Debate Transcript` section content with the full round-by-round transcript
+- Replace the `### Researcher Verdict` section content with the structured verdict block

@@ -34,22 +34,35 @@ class TestComputeIndicators:
         df = _make_ohlcv()
         result = compute_indicators(df)
         assert isinstance(result, dict)
-        expected_keys = [
+        # Check top-level structure
+        assert "current_price" in result
+        assert "indicators" in result
+        assert "key_levels" in result
+        assert "chart_pattern" in result
+        assert "high_volatility_flag" in result
+
+        # Check nested indicators
+        indicators = result.get("indicators", {})
+        expected_indicators = [
             "sma_20", "sma_50", "sma_200",
             "rsi_14", "macd", "macd_signal",
             "adx", "bb_upper", "bb_lower",
-            "atr_14", "current_price",
-            "52w_high", "52w_low",
-            "support_levels", "resistance_levels",
+            "atr_14", "52w_high", "52w_low",
         ]
-        for key in expected_keys:
-            assert key in result, f"Missing key: {key}"
+        for key in expected_indicators:
+            assert key in indicators, f"Missing indicator: {key}"
+
+        # Check key_levels structure
+        key_levels = result.get("key_levels", {})
+        expected_levels = ["support_1", "support_2", "resistance_1", "resistance_2"]
+        for key in expected_levels:
+            assert key in key_levels, f"Missing key_level: {key}"
 
     def test_rsi_bounds(self):
         """RSI should be between 0 and 100."""
         df = _make_ohlcv()
         result = compute_indicators(df)
-        rsi = result.get("rsi_14")
+        rsi = result.get("indicators", {}).get("rsi_14")
         if rsi is not None:
             assert 0 <= rsi <= 100, f"RSI out of bounds: {rsi}"
 
@@ -57,7 +70,7 @@ class TestComputeIndicators:
         """SMA_200 should equal the manual 200-day mean of Close."""
         df = _make_ohlcv()
         result = compute_indicators(df)
-        sma200 = result.get("sma_200")
+        sma200 = result.get("indicators", {}).get("sma_200")
         if sma200 is not None:
             manual = df["Close"].tail(200).mean()
             # Allow small floating point difference
@@ -76,7 +89,9 @@ class TestComputeIndicators:
         # The SMA_20 of the partial dataset should match its own last value,
         # not the full dataset's. They should differ because they end at
         # different points.
-        if result_full["sma_20"] is not None and result_partial["sma_20"] is not None:
+        sma_full = result_full.get("indicators", {}).get("sma_20")
+        sma_partial = result_partial.get("indicators", {}).get("sma_20")
+        if sma_full is not None and sma_partial is not None:
             # They should NOT be equal (different end dates = different values)
             # This confirms no lookahead — partial doesn't see future data
             assert True  # The fact that both compute without error is the test

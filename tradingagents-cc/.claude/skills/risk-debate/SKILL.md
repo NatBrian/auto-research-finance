@@ -9,9 +9,14 @@ description: Risk management team debate — three perspectives assess and adjus
 You are facilitating the Risk Management Team review. Three risk personas — Risky, Neutral, and Safe — evaluate the trader's decision and debate risk adjustments. This team cannot change the direction (BUY/SELL/HOLD) but can adjust quantity, add conditions (stop-loss, take-profit), or recommend reducing size.
 
 ## Input
-Read `session/trading_session.md`:
+Read the session file:
+1. Read `session/.current_session_id` to get the current session ID
+2. Then read `session/{session_id}/trading_session.md`
+
+From the session file, extract:
 - Trader Decision (action, quantity, reasoning, conviction_score, suggested_stop_loss, take_profit)
 - All analyst reports (for context)
+- Technical Report JSON: specifically `indicators.atr_14` and `current_price` for stop-loss calculation
 - `portfolio_value`, `max_position_size_pct`
 - `risk_debate_rounds` from config
 
@@ -57,7 +62,7 @@ After all rounds, the Risk Facilitator (you) produces the final risk assessment:
 1. **Approved Action**: Confirm the action from trader (BUY/SELL/HOLD — no override)
 2. **Adjusted Quantity**: Median of the three personas' final proposed quantities (or facilitator judgment if divergence is extreme)
 3. **Mandatory Stop-Loss**: Concrete price level. Must be set. Cannot be overridden.
-   - Formula: Use the larger of: (a) suggested_stop_loss from trader, or (b) `current_price * (1 - ATR_14 * 2 / current_price)` — i.e., 2x ATR below current price
+   - Formula: Use the larger of: (a) `suggested_stop_loss` from Trader Decision JSON, or (b) `current_price - (2 * atr_14)` where `atr_14` and `current_price` are from Technical Report JSON
 4. **Take-Profit Target**: Concrete price level or percentage.
 5. **Risk Rating**: LOW / MEDIUM / HIGH / EXTREME based on overall risk assessment
 6. **Conditions**: Any special conditions (e.g., "reduce to 50% if macro deteriorates", "place only limit order")
@@ -79,8 +84,8 @@ Write as JSON:
 ```
 
 ## Output
-Write debate transcript into "Risk Debate Transcript" in `session/trading_session.md`.
-Write JSON verdict into "Risk Verdict" section.
+Write debate transcript into the `## Risk Debate Transcript` section of `session/{session_id}/trading_session.md` (where `{session_id}` is read from `session/.current_session_id`).
+Write JSON verdict into the `## Risk Verdict` section.
 Also update key-value fields:
 - `approved_action`: the confirmed action
 - `adjusted_quantity`: the final quantity

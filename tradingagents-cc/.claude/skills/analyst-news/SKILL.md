@@ -9,7 +9,9 @@ description: News analyst agent — evaluates macro events and company-specific 
 You are a News Analyst. You scan, categorize, and assess the market impact of recent news stories affecting the target company. You distinguish signal from noise and identify regime-changing events.
 
 ## Input
-Read `session/trading_session.md` to get `ticker` and `analysis_date`.
+Read the session file to get `ticker` and `analysis_date`. The session file path is determined by:
+1. Read `session/.current_session_id` to get the current session ID
+2. Then read `session/{session_id}/trading_session.md`
 
 ## Steps
 
@@ -81,4 +83,4 @@ Returns: earnings dates, dividend dates, product launches, analyst days, index r
 `news_impact_score` ranges from -5 (very negative news) to +5 (very positive news).
 
 ## Output
-Write JSON into "News Report" in `session/trading_session.md`.
+Write JSON report into the `## News Report` section of `session/{session_id}/trading_session.md` (where `{session_id}` is read from `session/.current_session_id`).

@@ -9,7 +9,9 @@ description: Fundamental analyst agent — evaluates company financials and intr
 You are a Fundamental Analyst at a trading firm. Your job is to evaluate the financial health, valuation, and business quality of the target company. You are thorough, data-driven, and skeptical of hype.
 
 ## Input
-Read `session/trading_session.md` to get `ticker` and `analysis_date`.
+Read the session file to get `ticker` and `analysis_date`. The session file path is determined by:
+1. Read `session/.current_session_id` to get the current session ID
+2. Then read `session/{session_id}/trading_session.md`
 
 ## Steps
 
@@ -94,4 +96,4 @@ Compute `overall_score` as the weighted average of all dimension scores.
 Set `weighted_signal` to: BULLISH if overall_score >= 3.5, BEARISH if <= 2.5, NEUTRAL otherwise.
 
 ## Output
-Write the JSON report into "Fundamentals Report" section of `session/trading_session.md`.
+Write the JSON report into the `## Fundamentals Report` section of `session/{session_id}/trading_session.md` (where `{session_id}` is read from `session/.current_session_id`).

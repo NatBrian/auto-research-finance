@@ -1,5 +1,5 @@
 exchange:
-  default_adapter: "alpaca"         # Options: paper | alpaca | ibkr
+  default_adapter: "paper"          # Options: paper | alpaca | ibkr
   paper:
     initial_cash: 100000.0          # Starting paper portfolio cash
     slippage_bps: 5                 # Simulated slippage in basis points
@@ -12,7 +12,7 @@ exchange:
 
 # SSL verification (set to false only for corporate proxy environments)
 ssl:
-  verify: true                      # Set to false to bypass SSL verification for corporate proxies
+  verify: false                      # Set to false to bypass SSL verification for corporate proxies
 
 trading:
   max_position_size_pct: 10.0       # Maximum % of portfolio in a single position

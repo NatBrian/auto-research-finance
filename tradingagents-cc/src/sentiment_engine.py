@@ -1,22 +1,47 @@
 """
 TradingAgents-CC — Sentiment Engine
 
-Quantifies market sentiment from social media proxies, using VADER and
-TextBlob for NLP scoring.  Falls back to DuckDuckGo search when no
-Reddit API credentials are available.
+Quantifies market sentiment from multiple sources:
+  - Reddit (PRAW) for social media sentiment
+  - Alpha Vantage NEWS_SENTIMENT API for news-based sentiment
+  - DuckDuckGo news as additional source (always combined)
+
+Uses VADER and TextBlob for NLP scoring.
 """
 
 import os
 from datetime import datetime, timedelta
 from typing import Any
 
-from src.utils import setup_logging
+import requests
+import urllib3
+
+from src.utils import setup_logging, load_config
 
 logger = setup_logging()
 
 
+def _get_ssl_verify() -> bool:
+    """Read SSL verify setting from config. Defaults to True for security."""
+    try:
+        config = load_config()
+        return config.get("ssl", {}).get("verify", True)
+    except Exception:
+        return True
+
+
+# Disable SSL warnings only if verify=False in config
+_ssl_verify = _get_ssl_verify()
+if not _ssl_verify:
+    urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
+
+
 class SentimentEngine:
-    """Multi-source sentiment scoring engine."""
+    """Multi-source sentiment scoring engine.
+
+    Sources are combined: Reddit + Alpha Vantage + DuckDuckGo (always).
+    Falls back gracefully when individual sources fail.
+    """
 
     def __init__(self) -> None:
         self._reddit_client_id = os.environ.get("REDDIT_CLIENT_ID")
@@ -24,6 +49,11 @@ class SentimentEngine:
         self._reddit_user_agent = os.environ.get(
             "REDDIT_USER_AGENT", "tradingagents_cc:v1.0"
         )
+        self._alpha_vantage_key = os.environ.get("ALPHA_VANTAGE_KEY")
+
+        # Create session with SSL verification setting from config
+        self._session = requests.Session()
+        self._session.verify = _ssl_verify
 
     # ------------------------------------------------------------------
     # Social Sentiment
@@ -37,22 +67,77 @@ class SentimentEngine:
     ) -> dict[str, Any]:
         """Aggregate social media sentiment for *ticker*.
 
-        Uses Reddit (PRAW) if credentials are available, otherwise
-        DuckDuckGo news as a proxy.
+        Combines all available sources: Reddit + Alpha Vantage + DuckDuckGo.
+        Each source is fetched independently; failures don't block others.
+
+        Parameters
+        ----------
+        ticker : str
+            Stock ticker symbol to analyze.
+        date : str
+            Reference date (YYYY-MM-DD) for calculating lookback window.
+        lookback_days : int
+            Number of days to look back for sentiment data.
 
         Returns
         -------
-        dict with keys: daily_scores, 7d_avg, trend
+        dict with keys: daily_scores, 7d_avg, trend, total_posts, sources_used
         """
         texts: list[dict] = []
+        sources_tried: list[str] = []
+        sources_used: list[str] = []
+
+        # Parse reference date for lookback calculation
+        try:
+            ref_date = datetime.strptime(date, "%Y-%m-%d")
+        except ValueError:
+            ref_date = datetime.utcnow()
 
         # --- Try Reddit via PRAW ---
         if self._reddit_client_id and self._reddit_client_secret:
-            texts = self._fetch_reddit(ticker, lookback_days)
+            sources_tried.append("reddit")
+            logger.info("Fetching sentiment from Reddit for %s", ticker)
+            try:
+                reddit_texts = self._fetch_reddit(ticker, lookback_days, ref_date)
+                if reddit_texts:
+                    texts.extend(reddit_texts)
+                    sources_used.append("reddit")
+                    logger.info("Reddit returned %d posts", len(reddit_texts))
+            except Exception as exc:
+                logger.warning("Reddit fetch failed: %s", exc)
 
-        # --- Fallback: DuckDuckGo ---
+        # --- Try Alpha Vantage NEWS_SENTIMENT ---
+        if self._alpha_vantage_key:
+            sources_tried.append("alpha_vantage")
+            logger.info("Fetching sentiment from Alpha Vantage for %s", ticker)
+            try:
+                av_texts = self._fetch_alpha_vantage(ticker, lookback_days, ref_date)
+                if av_texts:
+                    texts.extend(av_texts)
+                    sources_used.append("alpha_vantage")
+                    logger.info("Alpha Vantage returned %d articles", len(av_texts))
+            except Exception as exc:
+                logger.warning("Alpha Vantage fetch failed: %s", exc)
+
+        # --- Always include DuckDuckGo (combined with other sources) ---
+        sources_tried.append("duckduckgo")
+        logger.info("Fetching sentiment from DuckDuckGo for %s", ticker)
+        try:
+            ddg_texts = self._fetch_ddg_proxy(ticker, lookback_days, ref_date)
+            if ddg_texts:
+                texts.extend(ddg_texts)
+                sources_used.append("duckduckgo")
+                logger.info("DuckDuckGo returned %d articles", len(ddg_texts))
+        except Exception as exc:
+            logger.warning("DuckDuckGo fetch failed: %s", exc)
+
+        # Log if no data found from any source
         if not texts:
-            texts = self._fetch_ddg_proxy(ticker, lookback_days)
+            logger.warning(
+                "No sentiment data found for %s from any source (tried: %s)",
+                ticker,
+                ", ".join(sources_tried),
+            )
 
         # --- Score each text ---
         daily_map: dict[str, list[float]] = {}
@@ -103,9 +188,13 @@ class SentimentEngine:
 
         return {
             "daily_scores": daily_scores,
-            "7d_avg": round(avg_7d, 4),
+            "7d_avg_score": round(avg_7d, 4),
+            "7d_avg": round(avg_7d, 4),  # Keep both for backward compatibility
             "trend": trend,
-            "total_posts": total_count,
+            "post_volume_7d": total_count,
+            "total_posts": total_count,  # Keep both for backward compatibility
+            "score": round(avg_7d, 4),  # Alias for skill compatibility
+            "sources_used": sources_used,
         }
 
     # ------------------------------------------------------------------
@@ -160,27 +249,63 @@ class SentimentEngine:
     # Private: Reddit
     # ------------------------------------------------------------------
 
-    def _fetch_reddit(self, ticker: str, lookback_days: int) -> list[dict]:
-        """Fetch posts mentioning *ticker* from finance subreddits."""
+    def _fetch_reddit(self, ticker: str, lookback_days: int, ref_date: datetime) -> list[dict]:
+        """Fetch posts mentioning *ticker* from finance subreddits.
+
+        Parameters
+        ----------
+        ticker : str
+            Stock ticker symbol to search for.
+        lookback_days : int
+            Number of days to look back (mapped to Reddit time_filter).
+        ref_date : datetime
+            Reference date for calculating the lookback window.
+
+        Returns
+        -------
+        list of dicts with keys: text, date, source
+        """
         texts: list[dict] = []
         try:
             import praw  # type: ignore
 
+            # Configure Reddit instance
             reddit = praw.Reddit(
                 client_id=self._reddit_client_id,
                 client_secret=self._reddit_client_secret,
                 user_agent=self._reddit_user_agent,
             )
+
+            # Disable SSL verification for prawcore if configured
+            if not _ssl_verify:
+                # Monkey-patch the session used by prawcore
+                import prawcore.sessions
+                prawcore.sessions._session = self._session
+
+            # Map lookback_days to Reddit's time_filter options
+            if lookback_days <= 1:
+                time_filter = "day"
+            elif lookback_days <= 7:
+                time_filter = "week"
+            elif lookback_days <= 30:
+                time_filter = "month"
+            else:
+                time_filter = "year"
+
             subreddits = ["wallstreetbets", "investing", "stocks"]
+            cutoff_date = ref_date - timedelta(days=lookback_days)
+
             for sub_name in subreddits:
                 try:
                     sub = reddit.subreddit(sub_name)
-                    for post in sub.search(ticker, time_filter="week", limit=20):
+                    for post in sub.search(ticker, time_filter=time_filter, limit=20):
+                        post_date = datetime.utcfromtimestamp(post.created_utc)
+                        # Double-check the post is within lookback window
+                        if post_date < cutoff_date:
+                            continue
                         texts.append({
                             "text": f"{post.title} {post.selftext[:500]}",
-                            "date": datetime.utcfromtimestamp(post.created_utc).strftime(
-                                "%Y-%m-%d"
-                            ),
+                            "date": post_date.strftime("%Y-%m-%d"),
                             "source": f"r/{sub_name}",
                         })
                 except Exception:
@@ -190,14 +315,137 @@ class SentimentEngine:
         return texts
 
     # ------------------------------------------------------------------
+    # Private: Alpha Vantage
+    # ------------------------------------------------------------------
+
+    def _fetch_alpha_vantage(
+        self, ticker: str, lookback_days: int, ref_date: datetime
+    ) -> list[dict]:
+        """Fetch news sentiment from Alpha Vantage NEWS_SENTIMENT API.
+
+        Parameters
+        ----------
+        ticker : str
+            Stock ticker symbol to search for.
+        lookback_days : int
+            Number of days to look back for news articles.
+        ref_date : datetime
+            Reference date for calculating the lookback window.
+
+        Returns
+        -------
+        list of dicts with keys: text, date, source, sentiment_score
+
+        Raises
+        ------
+        RuntimeError
+            If API returns rate limit error or other critical failures.
+        """
+        texts: list[dict] = []
+
+        # Calculate time range in Alpha Vantage format (YYYYMMDDTHHMM)
+        time_to = ref_date.strftime("%Y%m%dT0000")
+        time_from = (ref_date - timedelta(days=lookback_days)).strftime("%Y%m%dT0000")
+
+        url = "https://www.alphavantage.co/query"
+        params = {
+            "function": "NEWS_SENTIMENT",
+            "tickers": ticker,
+            "time_from": time_from,
+            "time_to": time_to,
+            "sort": "LATEST",
+            "limit": 50,
+            "apikey": self._alpha_vantage_key,
+        }
+
+        response = self._session.get(url, params=params, timeout=30)
+        response.raise_for_status()
+        data = response.json()
+
+        # Check for API errors (rate limit, invalid key, etc.)
+        if "Error Message" in data:
+            raise RuntimeError(f"Alpha Vantage API error: {data['Error Message']}")
+        if "Note" in data:
+            # Rate limit message from Alpha Vantage
+            raise RuntimeError(f"Alpha Vantage rate limit: {data['Note']}")
+        if "Information" in data:
+            # API call frequency limit
+            raise RuntimeError(f"Alpha Vantage limit: {data['Information']}")
+
+        # Parse news items
+        items = data.get("feed", [])
+        cutoff_date = ref_date - timedelta(days=lookback_days)
+
+        for item in items:
+            # Extract relevant ticker sentiment
+            ticker_sentiment = None
+            for ts in item.get("ticker_sentiment", []):
+                if ts.get("ticker") == ticker:
+                    ticker_sentiment = ts
+                    break
+
+            # Use ticker-specific sentiment if available, otherwise overall
+            if ticker_sentiment:
+                sentiment_score = float(ticker_sentiment.get("sentiment_score", 0))
+                relevance = float(ticker_sentiment.get("relevance_score", 0))
+            else:
+                sentiment_score = float(item.get("overall_sentiment_score", 0))
+                relevance = 1.0
+
+            # Skip low-relevance articles
+            if relevance < 0.3:
+                continue
+
+            # Parse publication date
+            time_published = item.get("time_published", "")
+            try:
+                pub_date = datetime.strptime(time_published[:8], "%Y%m%d")
+                if pub_date < cutoff_date:
+                    continue
+                date_str = pub_date.strftime("%Y-%m-%d")
+            except ValueError:
+                date_str = ref_date.strftime("%Y-%m-%d")
+
+            # Build text from title and summary
+            title = item.get("title", "")
+            summary = item.get("summary", "")
+            text = f"{title}. {summary}"[:500]
+
+            texts.append({
+                "text": text,
+                "date": date_str,
+                "source": item.get("source", "alpha_vantage"),
+                "sentiment_score": sentiment_score,
+                "relevance": relevance,
+            })
+
+        return texts
+
+    # ------------------------------------------------------------------
     # Private: DuckDuckGo proxy
     # ------------------------------------------------------------------
 
-    def _fetch_ddg_proxy(self, ticker: str, lookback_days: int) -> list[dict]:
-        """Use DuckDuckGo news as a sentiment text proxy."""
+    def _fetch_ddg_proxy(self, ticker: str, lookback_days: int, ref_date: datetime) -> list[dict]:
+        """Use DuckDuckGo news as a sentiment text proxy.
+
+        Parameters
+        ----------
+        ticker : str
+            Stock ticker symbol to search for.
+        lookback_days : int
+            Number of days to look back for news articles.
+        ref_date : datetime
+            Reference date for calculating the lookback window.
+
+        Returns
+        -------
+        list of dicts with keys: text, date, source
+        """
         texts: list[dict] = []
         try:
             from duckduckgo_search import DDGS  # type: ignore
+
+            cutoff_date = ref_date - timedelta(days=lookback_days)
 
             with DDGS() as ddgs:
                 results = list(ddgs.news(
@@ -206,9 +454,25 @@ class SentimentEngine:
                 ))
             for r in results:
                 body = r.get("body") or r.get("title", "")
+                raw_date = r.get("date", "")
+                # Parse and validate date, default to ref_date if missing/invalid
+                if raw_date and len(raw_date) >= 10:
+                    parsed_date = raw_date[:10]
+                else:
+                    parsed_date = ref_date.strftime("%Y-%m-%d")
+
+                # Filter out articles older than lookback window
+                try:
+                    article_date = datetime.strptime(parsed_date, "%Y-%m-%d")
+                    if article_date < cutoff_date:
+                        continue
+                except ValueError:
+                    # Keep article if date parsing fails
+                    pass
+
                 texts.append({
                     "text": body[:500],
-                    "date": (r.get("date") or "")[:10],
+                    "date": parsed_date,
                     "source": r.get("source", "ddg"),
                 })
         except Exception as exc:

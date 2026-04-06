@@ -18,9 +18,36 @@ from src.utils import get_project_root, safe_json_dumps, setup_logging
 logger = setup_logging()
 
 SESSION_FILE = "session/trading_session.md"
+CURRENT_SESSION_FILE = "session/.current_session_id"
 
 
-def _session_path() -> Path:
+def _get_current_session_id() -> str | None:
+    """Read the current session ID from the marker file."""
+    marker_path = get_project_root() / CURRENT_SESSION_FILE
+    if marker_path.exists():
+        return marker_path.read_text(encoding="utf-8").strip()
+    return None
+
+
+def set_current_session_id(session_id: str) -> None:
+    """Write the current session ID to the marker file."""
+    marker_path = get_project_root() / CURRENT_SESSION_FILE
+    marker_path.parent.mkdir(parents=True, exist_ok=True)
+    marker_path.write_text(session_id, encoding="utf-8")
+
+
+def _session_path(session_id: str | None = None) -> Path:
+    """Return the session file path.
+
+    If session_id is provided, use session-specific path: session/{session_id}/trading_session.md
+    Otherwise, try to read from the current session marker file.
+    Falls back to the legacy path if no session_id is found.
+    """
+    if session_id is None:
+        session_id = _get_current_session_id()
+
+    if session_id:
+        return get_project_root() / "session" / session_id / "trading_session.md"
     return get_project_root() / SESSION_FILE
 
 
@@ -28,21 +55,26 @@ def _session_path() -> Path:
 # Reading
 # ---------------------------------------------------------------------------
 
-def load_session() -> dict:
-    """Parse ``session/trading_session.md`` into a Python dict.
+def load_session(session_id: str | None = None) -> dict:
+    """Parse ``session/{session_id}/trading_session.md`` into a Python dict.
 
     Extracts:
       - key-value pairs from ``- **key**: value`` lines
       - JSON blocks from fenced ```json ... ``` sections, keyed by the
-        nearest preceding ``##`` or ``###`` heading
+        nearest preceding ``##`` heading
       - the audit trail table rows
+
+    Parameters
+    ----------
+    session_id : str | None
+        The session ID to load. If None, uses the current session marker.
 
     Returns
     -------
     dict
         Nested dictionary representing the full session state.
     """
-    path = _session_path()
+    path = _session_path(session_id)
     if not path.exists():
         logger.warning("Session file not found at %s", path)
         return {}
@@ -52,20 +84,37 @@ def load_session() -> dict:
     state: dict[str, Any] = {}
 
     # ---- extract top-level key-value pairs ----
+    # Normalize key names to snake_case for consistent access
+    key_mapping = {
+        "Session ID": "session_id",
+        "Ticker": "ticker",
+        "Analysis Date": "analysis_date",
+        "Exchange Adapter": "exchange_adapter",
+        "Debate Rounds": "debate_rounds",
+        "Risk Debate Rounds": "risk_debate_rounds",
+        "Max Position Size %": "max_position_size_pct",
+        "Portfolio Value": "portfolio_value",
+        "Phase": "phase",
+        "Status": "status",
+        "Started At": "started_at",
+        "Completed At": "completed_at",
+    }
     kv_pattern = re.compile(r"^-\s+\*\*(.+?)\*\*:\s*(.*)$", re.MULTILINE)
     for m in kv_pattern.finditer(text):
-        key = m.group(1).strip()
+        raw_key = m.group(1).strip()
         val = m.group(2).strip()
+        # Normalize key to snake_case
+        key = key_mapping.get(raw_key, raw_key.lower().replace(" ", "_").replace("%", "pct"))
         if val.lower() == "null" or val == "":
             val = None
-        elif val.replace(".", "", 1).lstrip("-").isdigit():
-            val = float(val) if "." in val else int(val)
+        elif val.replace(".", "", 1).lstrip("-").replace(",", "").isdigit():
+            val = float(val.replace(",", "")) if "." in val else int(val.replace(",", ""))
         elif val.lower() in ("true", "false"):
             val = val.lower() == "true"
         state[key] = val
 
     # ---- extract named JSON blocks (line-by-line scan) ----
-    # Walk through line-by-line: track the last heading seen, and when we
+    # Walk through line-by-line: track the last ## heading seen, and when we
     # encounter a ```json block, associate it with that heading.
     current_heading: str | None = None
     i = 0
@@ -73,8 +122,8 @@ def load_session() -> dict:
         line = lines[i]
         stripped = line.strip()
 
-        # Track headings (## or ###)
-        if stripped.startswith("## ") or stripped.startswith("### "):
+        # Track ## headings (primary section markers)
+        if stripped.startswith("## "):
             # Extract heading text (remove # prefix)
             heading_text = stripped.lstrip("#").strip()
             current_heading = heading_text
@@ -90,6 +139,7 @@ def load_session() -> dict:
                 json_lines.append(lines[i])
                 i += 1
             json_str = "".join(json_lines).strip()
+            # Only store if not already populated or if empty
             if current_heading not in state or not isinstance(state.get(current_heading), dict) or not state[current_heading]:
                 try:
                     state[current_heading] = json.loads(json_str) if json_str and json_str != "{}" else {}
@@ -112,7 +162,7 @@ def load_session() -> dict:
             m.group(4).strip(),
             m.group(5).strip(),
         )
-        if ts in ("Timestamp", "---"):
+        if ts in ("Timestamp", "---") or ts.startswith("-"):
             continue
         audit_rows.append(
             {
@@ -132,28 +182,61 @@ def load_session() -> dict:
 # Writing
 # ---------------------------------------------------------------------------
 
-def update_session(updates: dict[str, Any]) -> None:
+def update_session(updates: dict[str, Any], session_id: str | None = None) -> None:
     """Update specific key-value fields in the session file.
 
     Re-reads the file, applies updates, and writes atomically.
     Only updates ``- **key**: value`` style lines.
+    Keys are normalized to match session file format (Title Case).
+
+    Parameters
+    ----------
+    updates : dict
+        Key-value pairs to update.
+    session_id : str | None
+        The session ID. If None, uses the current session marker.
     """
-    path = _session_path()
+    path = _session_path(session_id)
     if not path.exists():
         logger.error("Cannot update — session file missing: %s", path)
         return
 
     text = path.read_text(encoding="utf-8")
 
+    # Reverse mapping: snake_case -> Title Case for file matching
+    reverse_key_mapping = {
+        "session_id": "Session ID",
+        "ticker": "Ticker",
+        "analysis_date": "Analysis Date",
+        "exchange_adapter": "Exchange Adapter",
+        "debate_rounds": "Debate Rounds",
+        "risk_debate_rounds": "Risk Debate Rounds",
+        "max_position_size_pct": "Max Position Size %",
+        "portfolio_value": "Portfolio Value",
+        "phase": "Phase",
+        "status": "Status",
+        "started_at": "Started At",
+        "completed_at": "Completed At",
+    }
+
     for key, value in updates.items():
+        # Convert snake_case to Title Case for file matching
+        file_key = reverse_key_mapping.get(key, key.replace("_", " ").title())
         pattern = re.compile(
-            rf"^(-\s+\*\*{re.escape(key)}\*\*:\s*)(.*)$",
+            rf"^(-\s+\*\*{re.escape(file_key)}\*\*:\s*)(.*)$",
             re.MULTILINE,
         )
         replacement_value = "null" if value is None else str(value)
         text, count = pattern.subn(rf"\g<1>{replacement_value}", text)
         if count == 0:
-            logger.debug("Key '%s' not found in session file; skipping.", key)
+            # Try the original key as fallback
+            pattern = re.compile(
+                rf"^(-\s+\*\*{re.escape(key)}\*\*:\s*)(.*)$",
+                re.MULTILINE,
+            )
+            text, count = pattern.subn(rf"\g<1>{replacement_value}", text)
+            if count == 0:
+                logger.debug("Key '%s' not found in session file; skipping.", key)
 
     _atomic_write(path, text)
 
@@ -163,9 +246,16 @@ def append_audit_entry(
     phase: str,
     action: str,
     notes: str,
+    session_id: str | None = None,
 ) -> None:
-    """Append a new row to the Audit Trail table."""
-    path = _session_path()
+    """Append a new row to the Audit Trail table.
+
+    Parameters
+    ----------
+    session_id : str | None
+        The session ID. If None, uses the current session marker.
+    """
+    path = _session_path(session_id)
     if not path.exists():
         return
 
@@ -178,7 +268,7 @@ def append_audit_entry(
     _atomic_write(path, text)
 
 
-def write_json_section(section_name: str, data: dict) -> None:
+def write_json_section(section_name: str, data: dict, session_id: str | None = None) -> None:
     """Replace the JSON code block under a named ``###`` or ``##`` section.
 
     Uses line-by-line scanning to find the section heading, then locates the
@@ -191,8 +281,10 @@ def write_json_section(section_name: str, data: dict) -> None:
         The heading text, e.g. ``"Fundamentals Report"``.
     data : dict
         Data to write as formatted JSON.
+    session_id : str | None
+        The session ID. If None, uses the current session marker.
     """
-    path = _session_path()
+    path = _session_path(session_id)
     if not path.exists():
         return
 
@@ -255,16 +347,23 @@ def initialize_session(
     portfolio_value: float,
     initial_phase: str = "INIT",
 ) -> None:
-    """Create the canonical ``session/trading_session.md`` from scratch.
+    """Create the canonical ``session/{session_id}/trading_session.md`` from scratch.
+
+    Also sets this session as the current session via a marker file.
 
     Parameters
     ----------
+    session_id : str
+        Unique session identifier (e.g., ``NVDA_2026-04-06_1712400000``).
     initial_phase : str
         Phase to set on creation.  The orchestrator typically sets this to
         ``ANALYSIS`` so that the session starts in the correct state.
     """
-    path = _session_path()
+    path = _session_path(session_id)
     path.parent.mkdir(parents=True, exist_ok=True)
+
+    # Set this session as the current session
+    set_current_session_id(session_id)
 
     now = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S")
     template = _SESSION_TEMPLATE.format(
@@ -330,28 +429,27 @@ _SESSION_TEMPLATE = """# Trading Session
 - **max_position_size_pct**: {max_position_size_pct}
 - **portfolio_value**: {portfolio_value}
 
-## Analyst Reports
-### Fundamentals Report
+## Fundamentals Report
 ```json
 {{}}
 ```
 
-### Sentiment Report
+## Sentiment Report
 ```json
 {{}}
 ```
 
-### News Report
+## News Report
 ```json
 {{}}
 ```
 
-### Technical Report
+## Technical Report
 ```json
 {{}}
 ```
 
-## Researcher Debate
+## Research Debate
 ### Bull Case
 ```
 (none)
@@ -378,12 +476,12 @@ _SESSION_TEMPLATE = """# Trading Session
 {{}}
 ```
 
-## Risk Assessment
-### Risk Debate Transcript
+## Risk Debate Transcript
 ```
 (none)
 ```
-### Risk Verdict
+
+## Risk Verdict
 - **approved_action**: null
 - **adjusted_quantity**: null
 - **stop_loss**: null

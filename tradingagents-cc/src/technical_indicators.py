@@ -155,6 +155,7 @@ def compute_indicators(df: pd.DataFrame) -> dict[str, Any]:
         lambda: ta.vwap(df["High"], df["Low"], df["Close"], df["Volume"])
     )
     result["volume_sma_20"] = _safe_last(lambda: ta.sma(df["Volume"], length=20))
+    result["volume"] = _last_val(df["Volume"])  # Current volume for skill rules
 
     # ------------------------------------------------------------------
     # Current price & 52-week range
@@ -173,10 +174,66 @@ def compute_indicators(df: pd.DataFrame) -> dict[str, Any]:
     # Support / Resistance (rolling pivot)
     # ------------------------------------------------------------------
 
-    result["support_levels"] = _find_swing_levels(df, kind="low", n=3, window=90)
-    result["resistance_levels"] = _find_swing_levels(df, kind="high", n=3, window=90)
+    support_levels = _find_swing_levels(df, kind="low", n=3, window=90)
+    resistance_levels = _find_swing_levels(df, kind="high", n=3, window=90)
 
-    return result
+    # ------------------------------------------------------------------
+    # Restructure output to match skill expectations
+    # ------------------------------------------------------------------
+
+    # Extract indicator subset for nested structure
+    indicators = {
+        "sma_20": result.get("sma_20"),
+        "sma_50": result.get("sma_50"),
+        "sma_200": result.get("sma_200"),
+        "rsi_14": result.get("rsi_14"),
+        "macd": result.get("macd"),
+        "macd_signal": result.get("macd_signal"),
+        "macd_histogram": result.get("macd_histogram"),
+        "adx": result.get("adx"),
+        "bb_upper": result.get("bb_upper"),
+        "bb_lower": result.get("bb_lower"),
+        "atr_14": result.get("atr_14"),
+        "52w_high": result.get("52w_high"),
+        "52w_low": result.get("52w_low"),
+        # Additional indicators needed for skill interpretation rules
+        "stochastic_k": result.get("stochastic_k"),
+        "stochastic_d": result.get("stochastic_d"),
+        "obv": result.get("obv"),
+        "volume_sma_20": result.get("volume_sma_20"),
+        "volume": result.get("volume"),
+    }
+
+    # Key levels as dict with support_1, support_2, etc.
+    key_levels = {
+        "support_1": support_levels[0] if len(support_levels) > 0 else None,
+        "support_2": support_levels[1] if len(support_levels) > 1 else None,
+        "resistance_1": resistance_levels[0] if len(resistance_levels) > 0 else None,
+        "resistance_2": resistance_levels[1] if len(resistance_levels) > 1 else None,
+    }
+
+    # Return structured output matching skill expectations
+    return {
+        "current_price": result.get("current_price"),
+        "indicators": indicators,
+        "votes": {
+            "trend": None,  # Computed by skill based on interpretation rules
+            "momentum": None,
+            "volume": None,
+        },
+        "scores": {
+            "trend_score": None,
+            "momentum_score": None,
+            "volume_confirmation": None,
+            "total_signal_score": None,
+        },
+        "technical_signal": None,  # Computed by skill
+        "chart_pattern": None,  # Will be added by caller
+        "key_levels": key_levels,
+        "high_volatility_flag": (result.get("atr_14") or 0) / (result.get("current_price") or 1) > 0.03,
+        # Keep raw values for skill to compute scores
+        "_raw": result,
+    }
 
 
 # ---------------------------------------------------------------------------
