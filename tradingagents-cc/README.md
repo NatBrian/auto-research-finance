@@ -2,6 +2,21 @@
 
 **Multi-Agent Trading System for Claude Code**
 
+<div style="display: flex; background-color: #000; align-items: flex-start;">
+  <div style="flex: 1; padding: 2px;">
+    <img src="https://raw.githubusercontent.com/NatBrian/auto-research-finance/main/tradingagents-cc/assets/compressed_Screenshot%202026-04-08%20104748.jpg" 
+         style="width: 100%;" alt="AAPL Report">
+  </div>
+  <div style="flex: 1; padding: 2px;">
+    <img src="https://raw.githubusercontent.com/NatBrian/auto-research-finance/main/tradingagents-cc/assets/img_0110.jpg" 
+         style="width: 100%;" alt="GOOG Report">
+  </div>
+</div>
+
+<br>
+
+https://github.com/NatBrian/auto-research-finance/blob/main/tradingagents-cc/assets/tradingagents_goog_20260408154447.mp4
+
 > ⚠️ **RESEARCH DISCLAIMER**: This system is for **research and educational purposes only**. It is NOT financial advice. Do NOT use this system with real money without understanding the risks. Past simulated performance does not guarantee future results. The authors accept no liability for financial losses incurred from the use of this software.
 
 ---
