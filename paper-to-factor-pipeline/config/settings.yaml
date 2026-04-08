@@ -8,25 +8,84 @@ data:
   manifest_file: "data/manifest.json"
   min_coverage_ratio: 0.30
 
+# Network Configuration
+network:
+  ssl_verify: false  # Set to true in production; false for proxies/corporate networks
+  timeout_seconds: 30
+  retry_count: 3
+
 execution:
   transaction_cost_bps: 10
   max_position_weight: 0.10
+  max_leverage: 1.0
 
 backtest:
   risk_free_rate: 0.0
   periods_per_year: 252
+  ic_horizon: 21  # Forward return horizon for IC (21 days = 1 month, good for momentum)
+  ic_horizons: [1, 5, 21, 63]  # Multiple horizons to report
 
 thresholds:
   min_sharpe: 0.7        # Achievable target for 30-ticker research prototype
   min_ic: 0.02           # Statistically meaningful at this universe size
   require_positive_alpha: true
-  # Note: tighten to min_sharpe: 1.0, min_ic: 0.05 for production deployment
+  min_sortino: 0.8       # Downside risk-adjusted return
+  max_beta: 1.5          # Maximum allowed beta to SPY
 
 workflow:
   max_iterations: 3
   research_log_path: "sandbox/research_log.md"
   factor_path: "sandbox/factor.py"
   output_path: "outputs/final_factor.py"
+  model_output_path: "outputs/final_model.pkl"
+
+# ML Strategy Configuration
+ml:
+  default_model: "xgboost"  # xgboost, random_forest, logistic_regression
+  default_features:
+    - "ret_5d"
+    - "ret_20d"
+    - "vol_z_5d"
+    - "volatility_20d"
+  extended_features:
+    - "ret_1d"
+    - "ret_5d"
+    - "ret_20d"
+    - "ret_60d"
+    - "momentum_12_1"
+    - "volatility_5d"
+    - "volatility_20d"
+    - "vol_ratio_20_5"
+    - "vol_z_5d"
+    - "vol_z_20d"
+    - "volume_ratio"
+    - "rsi_14d"
+    - "bb_position"
+    - "atr_ratio"
+  target_horizon: 5
+  tune_hyperparams: false
+  cv_folds: 5
+  xgboost:
+    n_estimators: 100
+    max_depth: 3
+    learning_rate: 0.1
+  random_forest:
+    n_estimators: 100
+    max_depth: 5
+    min_samples_split: 10
+
+# Ensemble Configuration
+ensemble:
+  enabled: true
+  default_method: "rank_average"  # mean, median, rank_average, weighted, stacking
+  strategies: []
+
+# Sector Tracking Configuration
+sector:
+  enabled: true
+  sector_map_file: "data/sector_map.csv"
+  max_sector_concentration: 0.40  # Max 40% in single sector
+  report_exposure: true
 
 logging:
   level: "INFO"

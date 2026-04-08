@@ -1,4 +1,5 @@
 import sys
+import traceback
 from pathlib import Path
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent
@@ -49,7 +50,7 @@ def search_papers(query: str, category_filter: str = "q-fin", max_results: int =
 
         return json.dumps(papers)
     except Exception as exc:
-        return json.dumps({"status": "error", "message": str(exc)})
+        return json.dumps({"status": "error", "message": str(exc), "traceback": traceback.format_exc()})
 
 
 @mcp.tool()
@@ -60,7 +61,7 @@ def fetch_paper_details(arxiv_id: str) -> str:
         result = next(client.results(search))
         return json.dumps(_paper_to_dict(result))
     except Exception as exc:
-        return json.dumps({"status": "error", "message": str(exc)})
+        return json.dumps({"status": "error", "message": str(exc), "traceback": traceback.format_exc()})
 
 
 if __name__ == "__main__":

@@ -3,7 +3,7 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
-from src.backtester import Backtester
+from src.core.backtester import EnhancedBacktester
 from src.utils import load_config
 
 REQUIRED_KEYS = {
@@ -11,6 +11,10 @@ REQUIRED_KEYS = {
     "message",
     "sharpe_ratio",
     "information_coefficient",
+    "ic_1d",
+    "ic_5d",
+    "ic_21d",
+    "ic_63d",
     "annualized_return",
     "max_drawdown",
     "daily_turnover",
@@ -55,9 +59,9 @@ def _synthetic_panel() -> pd.DataFrame:
 
 
 def _patch_dependencies(monkeypatch):
-    monkeypatch.setattr("src.backtester.DataLoader.load", lambda self, start, end: _synthetic_panel())
+    monkeypatch.setattr("src.prepare.DataLoader.load", lambda self, start, end: _synthetic_panel())
     monkeypatch.setattr(
-        "src.backtester.SPYBenchmark.run",
+        "src.benchmark.SPYBenchmark.run",
         lambda self: {
             "sharpe_ratio": 0.5,
             "annualized_return": 0.08,
@@ -66,7 +70,7 @@ def _patch_dependencies(monkeypatch):
         },
     )
     monkeypatch.setattr(
-        "src.backtester.MLBaseline.run",
+        "src.ml_baseline.MLBaseline.run",
         lambda self: {
             "xgb_sharpe": 0.3,
             "logreg_sharpe": 0.2,
@@ -78,7 +82,7 @@ def _patch_dependencies(monkeypatch):
 
 def test_run_returns_success_dict_with_all_fields(monkeypatch):
     _patch_dependencies(monkeypatch)
-    result = Backtester(load_config("config/settings.yaml")).run()
+    result = EnhancedBacktester(load_config("config/settings.yaml")).run()
 
     assert isinstance(result, dict)
     assert result["status"] == "success"
@@ -91,7 +95,7 @@ def test_run_handles_syntax_error_gracefully(monkeypatch):
     original = factor_path.read_text(encoding="utf-8")
     try:
         factor_path.write_text("def generate_signals(", encoding="utf-8")
-        result = Backtester(load_config("config/settings.yaml")).run()
+        result = EnhancedBacktester(load_config("config/settings.yaml")).run()
         assert result["status"] == "error"
         assert isinstance(result.get("message"), str)
         assert len(result["message"]) > 0
@@ -110,7 +114,7 @@ def test_run_handles_runtime_error_gracefully(monkeypatch):
             "    return 1 / 0\n",
             encoding="utf-8",
         )
-        result = Backtester(load_config("config/settings.yaml")).run()
+        result = EnhancedBacktester(load_config("config/settings.yaml")).run()
         assert result["status"] == "error"
     finally:
         factor_path.write_text(original, encoding="utf-8")

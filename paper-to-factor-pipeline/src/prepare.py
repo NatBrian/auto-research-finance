@@ -1,16 +1,30 @@
 from __future__ import annotations
 
+import logging
 from pathlib import Path
 
 import numpy as np
 import pandas as pd
+
+# Install SSL patch BEFORE importing yfinance
+from src.utils import DataUnavailableError, get_ssl_verify, install_ssl_patch, load_config
+
+install_ssl_patch()
 
 try:
     import yfinance as yf
 except Exception:  # pragma: no cover - optional dependency during thin test envs
     yf = None
 
-from src.utils import DataUnavailableError, load_config
+try:
+    import requests
+    from requests.adapters import HTTPAdapter
+    from urllib3.util.retry import Retry
+except Exception:  # pragma: no cover
+    requests = None
+
+PROJECT_ROOT = Path(__file__).resolve().parent.parent
+logger = logging.getLogger("paper_to_factor")
 
 
 class DataLoader:
@@ -24,6 +38,22 @@ class DataLoader:
         self.universe_df = pd.read_csv(self.universe_path)
         self.universe_df["Date_Added"] = pd.to_datetime(self.universe_df["Date_Added"], errors="coerce")
         self.universe_df["Date_Removed"] = pd.to_datetime(self.universe_df["Date_Removed"], errors="coerce")
+
+    def _create_session(self):
+        """Create requests session with SSL settings from config."""
+        if requests is None:
+            return None
+
+        session = requests.Session()
+        retry_strategy = Retry(
+            total=3,
+            backoff_factor=1,
+            status_forcelist=[429, 500, 502, 503, 504],
+        )
+        adapter = HTTPAdapter(max_retries=retry_strategy)
+        session.mount("http://", adapter)
+        session.mount("https://", adapter)
+        return session
 
     def _active_universe(self, start_date: str) -> list[str]:
         start_ts = pd.Timestamp(start_date)
@@ -103,9 +133,10 @@ class DataLoader:
 
         synthetic = pd.DataFrame(index=date_index, columns=self.REQUIRED_COLS, dtype=float)
         synthetic.iloc[:active_days] = np.column_stack([open_px, high, low, close, volume])
-        print(
-            f"[SURVIVORSHIP] Injected synthetic delisting tail for {ticker} "
-            f"from {date_index[active_days - 1].date()}"
+        logger.info(
+            "Injected synthetic delisting tail for %s from %s",
+            ticker,
+            date_index[active_days - 1].date(),
         )
         return synthetic
 
@@ -119,14 +150,15 @@ class DataLoader:
         last_real_date = full["Close"].dropna().index.max()
         if pd.notna(last_real_date):
             full.loc[full.index > last_real_date, self.REQUIRED_COLS] = np.nan
-            print(
-                f"[SURVIVORSHIP] Injected synthetic delisting tail for {ticker} "
-                f"from {pd.Timestamp(last_real_date).date()}"
+            logger.info(
+                "Injected synthetic delisting tail for %s from %s",
+                ticker,
+                pd.Timestamp(last_real_date).date(),
             )
         return full
 
     def load(self, start_date: str, end_date: str) -> pd.DataFrame:
-        cache_path = Path(f"data/cache/market_data_{start_date}_{end_date}.parquet")
+        cache_path = PROJECT_ROOT / f"data/cache/market_data_{start_date}_{end_date}.parquet"
         if cache_path.exists():
             return pd.read_parquet(cache_path)
 
@@ -144,7 +176,6 @@ class DataLoader:
                 end=end_date,
                 auto_adjust=True,
                 progress=False,
-                threads=True,
             )
         except Exception as exc:
             raise DataUnavailableError(f"Failed to download market data: {exc}") from exc

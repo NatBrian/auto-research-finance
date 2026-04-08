@@ -77,7 +77,7 @@ class MLBaseline:
 
         quantiles = valid_train_target.quantile([0.2, 0.4, 0.6, 0.8]).values
         bins = [-np.inf, *quantiles.tolist(), np.inf]
-        labels = [1, 2, 3, 4, 5]
+        labels = [0, 1, 2, 3, 4]  # 0-indexed for XGBoost compatibility
 
         train_target = pd.cut(train_fwd, bins=bins, labels=labels).astype(float)
         test_target = pd.cut(test_fwd, bins=bins, labels=labels).astype(float)
@@ -107,13 +107,12 @@ class MLBaseline:
                     n_estimators=100,
                     max_depth=3,
                     random_state=42,
-                    use_label_encoder=False,
                     eval_metric="mlogloss",
                 )
                 xgb.fit(x_train_scaled, y_train)
                 xgb_proba = xgb.predict_proba(x_test_scaled)
                 class_to_idx = {c: i for i, c in enumerate(xgb.classes_)}
-                top_class_idx = class_to_idx.get(5, len(xgb.classes_) - 1)
+                top_class_idx = class_to_idx.get(4, len(xgb.classes_) - 1)  # Class 4 = top quintile
                 xgb_signal = pd.Series(xgb_proba[:, top_class_idx], index=x_test.index)
 
                 xgb_returns = apply_costs(xgb_signal, self.test_data, cost_bps=10)
@@ -127,7 +126,7 @@ class MLBaseline:
             logreg.fit(x_train_scaled, y_train)
             lr_proba = logreg.predict_proba(x_test_scaled)
             class_to_idx = {c: i for i, c in enumerate(logreg.classes_)}
-            top_class_idx = class_to_idx.get(5, len(logreg.classes_) - 1)
+            top_class_idx = class_to_idx.get(4, len(logreg.classes_) - 1)  # Class 4 = top quintile
             lr_signal = pd.Series(lr_proba[:, top_class_idx], index=x_test.index)
 
             lr_returns = apply_costs(lr_signal, self.test_data, cost_bps=10)

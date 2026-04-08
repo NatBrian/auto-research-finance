@@ -8,7 +8,7 @@ if str(PROJECT_ROOT) not in sys.path:
 import traceback
 from mcp.server.fastmcp import FastMCP
 
-from src.backtester import Backtester
+from src.core.backtester import EnhancedBacktester
 from src.utils import load_config, safe_json_dumps
 
 
@@ -24,7 +24,7 @@ def ping_backtest() -> dict:
 def run_backtest() -> str:
     try:
         config = load_config("config/settings.yaml")
-        result = Backtester(config).run()
+        result = EnhancedBacktester(config).run()
         return safe_json_dumps(result)
     except Exception:
         return safe_json_dumps(

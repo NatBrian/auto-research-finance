@@ -4,17 +4,17 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from src.prepare import DataLoader
+from src.prepare import DataLoader, PROJECT_ROOT
 from src.utils import DataUnavailableError
 
 
 def _clear_cache(start: str, end: str) -> None:
-    cache = Path(f"data/cache/market_data_{start}_{end}.parquet")
+    cache = PROJECT_ROOT / f"data/cache/market_data_{start}_{end}.parquet"
     if cache.exists():
         cache.unlink()
 
 
-def _mock_download(tickers, start, end, auto_adjust=True, progress=False, threads=True):
+def _mock_download(tickers, start, end, auto_adjust=True, progress=False):
     if isinstance(tickers, str):
         tickers = tickers.split()
 

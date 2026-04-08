@@ -114,24 +114,24 @@ def test_arxiv_server_tools_return_json_payloads():
 
 
 def test_backtest_server_returns_json_payload():
-    backtester_mod = types.ModuleType("src.backtester")
+    core_backtester_mod = types.ModuleType("src.core.backtester")
     utils_mod = types.ModuleType("src.utils")
 
-    class _StubBacktester:
+    class _StubEnhancedBacktester:
         def __init__(self, config):
             self.config = config
 
         def run(self):
             return {"status": "success", "message": "", "sharpe_ratio": 1.23}
 
-    backtester_mod.Backtester = _StubBacktester
+    core_backtester_mod.EnhancedBacktester = _StubEnhancedBacktester
     utils_mod.load_config = lambda path="config/settings.yaml": {"loaded": True}
     utils_mod.safe_json_dumps = json.dumps
 
     module = _load_module(
         "test_backtest_server",
         PROJECT_ROOT / "mcp_servers" / "backtest_server" / "server.py",
-        {**_mcp_stub_modules(), "src.backtester": backtester_mod, "src.utils": utils_mod},
+        {**_mcp_stub_modules(), "src.core.backtester": core_backtester_mod, "src.utils": utils_mod},
     )
 
     assert module.ping_backtest()["status"] == "ok"

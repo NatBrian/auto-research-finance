@@ -1,13 +1,17 @@
 import numpy as np
 import pandas as pd
 
+# Install SSL patch BEFORE importing yfinance
+from src.utils import install_ssl_patch, setup_logging
+
+install_ssl_patch()
+
 try:
     import yfinance as yf
 except Exception:  # pragma: no cover - optional dependency during thin test envs
     yf = None
 
 from src.metrics import annualized_return, max_drawdown, sharpe_ratio
-from src.utils import setup_logging
 
 
 class SPYBenchmark:
@@ -32,7 +36,12 @@ class SPYBenchmark:
                 auto_adjust=True,
                 progress=False,
             )
-            close = data["Close"].dropna().astype(float)
+            # Handle MultiIndex columns from yfinance
+            if isinstance(data.columns, pd.MultiIndex):
+                close = data[("Close", "SPY")].dropna().astype(float)
+            else:
+                close = data["Close"].dropna().astype(float)
+
             if close.empty:
                 raise ValueError("No SPY data returned")
 
