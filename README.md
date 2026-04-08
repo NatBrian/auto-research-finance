@@ -11,7 +11,7 @@ A collection of autonomous AI-driven quantitative finance systems built on **Cla
 | [**paper-to-factor-pipeline**](./paper-to-factor-pipeline/) | Discovers arXiv papers, translates research into executable trading factors, backtests with survivorship-aware data, and iteratively refines until validation thresholds are met. |
 | [**tradingagents-cc**](./tradingagents-cc/) | Multi-agent trading system (re-implementation of arxiv:2412.20138) with 5 specialized teams — Analysts, Researchers (Bull/Bear debate), Trader, Risk Management, and Portfolio Manager — that analyze a ticker and submit orders to paper/Alpaca/IBKR. |
 | [**moomoo-dashboard**](./moomoo-dashboard/) | Visual equity research reports powered by MooMoo OpenAPI. Input a ticker → get an interactive HTML dashboard with real-time market data, technicals, fundamentals, sector comparison, and sentiment analysis. |
-| [**stock-insight**](./stock-insight/) | Generate interactive, single-file HTML financial reports for any stock ticker. 100% free with yfinance, Twelve Data, and Finnhub APIs. 7 report tabs with beginner/advanced modes. |
+| [~~**stock-insight**~~](./stock-insight/) `[DEPRECATED]` | **Superseded by [moomoo-dashboard](./moomoo-dashboard/).** <br> *This project is kept for reference only and is no longer actively maintained.* |
 
 ---
 
