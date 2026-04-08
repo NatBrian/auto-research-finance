@@ -11,8 +11,8 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
+import requests
 import yfinance as yf
-from curl_cffi.requests import Session
 
 from src.utils import get_project_root, load_config, setup_logging
 
@@ -29,7 +29,35 @@ def _get_ssl_verify() -> bool:
 
 
 _SSL_VERIFY = _get_ssl_verify()
-_SSL_SESSION = Session(verify=_SSL_VERIFY)
+
+
+def _fetch_price_via_api(ticker: str) -> float | None:
+    """Fetch price via Yahoo Finance API directly (bypasses curl_cffi SSL issues)."""
+    try:
+        url = f"https://query1.finance.yahoo.com/v8/finance/chart/{ticker}?interval=1d&range=5d"
+        headers = {
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
+        }
+        resp = requests.get(url, headers=headers, verify=_SSL_VERIFY, timeout=10)
+        if resp.status_code == 200:
+            data = resp.json()
+            result = data.get("chart", {}).get("result", [])
+            if result:
+                meta = result[0].get("meta", {})
+                price = meta.get("regularMarketPrice")
+                if price:
+                    return float(price)
+                # Fallback to last close from quotes
+                indicators = result[0].get("indicators", {})
+                quote = indicators.get("quote", [{}])[0]
+                closes = quote.get("close", [])
+                if closes:
+                    for c in reversed(closes):
+                        if c is not None:
+                            return float(c)
+    except Exception as e:
+        logger.debug(f"API fetch failed for {ticker}: {e}")
+    return None
 
 
 class PaperAdapter:
@@ -106,33 +134,42 @@ class PaperAdapter:
         order_type = order.get("order_type", "MARKET")
         limit_price = order.get("limit_price")
 
-        # Get current market price
-        try:
-            info = yf.Ticker(ticker, session=_SSL_SESSION).info
-            current_price = info.get("currentPrice") or info.get("regularMarketPrice")
-            if current_price is None:
-                hist = yf.download(ticker, period="1d", progress=False, session=_SSL_SESSION)
-                if hist is not None and not hist.empty:
-                    current_price = float(hist["Close"].iloc[-1])
-        except Exception as exc:
-            # Fallback: try without session (some environments work differently)
+        # Get current market price - try multiple methods
+        current_price = None
+        errors = []
+
+        # Method 1: Direct Yahoo Finance API (bypasses curl_cffi SSL issues)
+        current_price = _fetch_price_via_api(ticker)
+        if current_price is None:
+            errors.append("yf_api: failed")
+
+        # Method 2: yf.download
+        if current_price is None:
             try:
                 hist = yf.download(ticker, period="5d", progress=False)
                 if hist is not None and not hist.empty:
-                    current_price = float(hist["Close"].iloc[-1])
-                else:
-                    return {
-                        "status": "error",
-                        "message": f"Cannot get current price for {ticker}: {exc}",
-                    }
-            except Exception as exc2:
-                return {
-                    "status": "error",
-                    "message": f"Cannot get current price for {ticker}: {exc2}",
-                }
+                    close_col = "Close" if "Close" in hist.columns else ("Close", ticker) if ("Close", ticker) in hist.columns else None
+                    if close_col:
+                        val = hist[close_col].iloc[-1]
+                        current_price = float(val) if hasattr(val, '__float__') else float(val.iloc[0]) if hasattr(val, 'iloc') else None
+            except Exception as exc:
+                errors.append(f"download: {exc}")
+
+        # Method 3: Try .info
+        if current_price is None:
+            try:
+                info = yf.Ticker(ticker).info
+                current_price = info.get("currentPrice") or info.get("regularMarketPrice")
+                if current_price:
+                    current_price = float(current_price)
+            except Exception as exc:
+                errors.append(f"info: {exc}")
 
         if current_price is None:
-            return {"status": "error", "message": f"No price available for {ticker}"}
+            return {
+                "status": "error",
+                "message": f"Cannot get current price for {ticker}. Tried: {'; '.join(errors)}",
+            }
 
         current_price = float(current_price)
 
@@ -304,19 +341,35 @@ class PaperAdapter:
         """Update current_value for all positions using live prices."""
         positions = self._portfolio.get("positions", {})
         for ticker, pos in positions.items():
-            try:
-                info = yf.Ticker(ticker, session=_SSL_SESSION).info
-                price = info.get("currentPrice") or info.get("regularMarketPrice")
-                if price:
-                    pos["current_value"] = round(float(price) * pos["quantity"], 2)
-            except Exception:
-                # Fallback: try without session
+            price = None
+
+            # Method 1: Direct Yahoo Finance API
+            price = _fetch_price_via_api(ticker)
+
+            # Method 2: yf.download
+            if price is None:
                 try:
-                    hist = yf.download(ticker, period="1d", progress=False)
+                    hist = yf.download(ticker, period="5d", progress=False)
                     if hist is not None and not hist.empty:
-                        price = float(hist["Close"].iloc[-1])
-                        pos["current_value"] = round(price * pos["quantity"], 2)
-                    else:
-                        pos["current_value"] = pos["quantity"] * pos["avg_price"]
+                        close_col = "Close" if "Close" in hist.columns else ("Close", ticker) if ("Close", ticker) in hist.columns else None
+                        if close_col:
+                            val = hist[close_col].iloc[-1]
+                            price = float(val) if hasattr(val, '__float__') else float(val.iloc[0]) if hasattr(val, 'iloc') else None
                 except Exception:
-                    pos["current_value"] = pos["quantity"] * pos["avg_price"]
+                    pass
+
+            # Method 3: Try .info
+            if price is None:
+                try:
+                    info = yf.Ticker(ticker).info
+                    price = info.get("currentPrice") or info.get("regularMarketPrice")
+                    if price:
+                        price = float(price)
+                except Exception:
+                    pass
+
+            if price:
+                pos["current_value"] = round(price * pos["quantity"], 2)
+            else:
+                # Fallback to avg_price if no live price available
+                pos["current_value"] = pos["quantity"] * pos["avg_price"]
