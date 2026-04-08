@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ ticker }} - Financial Report ({{ date }})</title>
+
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        up: '#22c55e',
+                        down: '#ef4444',
+                    }
+                }
+            }
+        }
+
+        // Initialize dark mode from localStorage
+        if (localStorage.getItem('darkMode') === 'true' ||
+            (!localStorage.getItem('darkMode') && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+            document.documentElement.classList.add('dark');
+        }
+
+        function toggleDarkMode() {
+            document.documentElement.classList.toggle('dark');
+            localStorage.setItem('darkMode', document.documentElement.classList.contains('dark'));
+            // Update Plotly charts for dark mode
+            updateChartsTheme();
+        }
+
+        function updateChartsTheme() {
+            const isDark = document.documentElement.classList.contains('dark');
+            // Plotly charts adapt automatically due to transparent backgrounds
+        }
+    </script>
+
+    <!-- Plotly.js -->
+    <script src="https://cdn.plot.ly/plotly-2.27.0.min.js"></script>
+
+    <style>
+        /* Sticky table columns for mobile */
+        .sticky-col {
+            position: sticky;
+            left: 0;
+            z-index: 10;
+            background: inherit;
+        }
+
+        .dark .sticky-col {
+            background: #1f2937;
+        }
+
+        /* Smooth scrolling for iOS */
+        .overflow-x-auto {
+            -webkit-overflow-scrolling: touch;
+        }
+
+        /* Tab styles */
+        .tab-btn {
+            transition: all 0.2s ease;
+        }
+
+        .tab-btn.active {
+            border-bottom: 2px solid #3b82f6;
+            color: #3b82f6;
+        }
+
+        .dark .tab-btn.active {
+            border-bottom-color: #60a5fa;
+            color: #60a5fa;
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        /* Card hover effect */
+        .metric-card {
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .metric-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1);
+        }
+
+        /* Print styles */
+        @media print {
+            .no-print {
+                display: none !important;
+            }
+            .tab-content {
+                display: block !important;
+                page-break-inside: avoid;
+            }
+        }
+    </style>
+</head>
+<body class="bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-gray-100 min-h-screen">
+    <!-- Header -->
+    <header class="bg-white dark:bg-gray-800 shadow-sm sticky top-0 z-50 no-print">
+        <div class="max-w-7xl mx-auto px-4 py-4 flex justify-between items-center">
+            <div class="flex items-center space-x-4">
+                <h1 class="text-2xl font-bold">{{ ticker }}</h1>
+                {% if profile and profile.name %}
+                <span class="text-gray-500 dark:text-gray-400 hidden sm:inline">{{ profile.name }}</span>
+                {% endif %}
+            </div>
+            <div class="flex items-center space-x-4">
+                <span class="text-sm text-gray-500 dark:text-gray-400">{{ date }}</span>
+                <button onclick="toggleDarkMode()" class="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700">
+                    <svg class="w-5 h-5 hidden dark:block" fill="currentColor" viewBox="0 0 20 20">
+                        <path d="M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zm4 8a4 4 0 11-8 0 4 4 0 018 0zm-.464 4.95l.707.707a1 1 0 001.414-1.414l-.707-.707a1 1 0 00-1.414 1.414zm2.12-10.607a1 1 0 010 1.414l-.706.707a1 1 0 11-1.414-1.414l.707-.707a1 1 0 011.414 0zM17 11a1 1 0 100-2h-1a1 1 0 100 2h1zm-7 4a1 1 0 011 1v1a1 1 0 11-2 0v-1a1 1 0 011-1zM5.05 6.464A1 1 0 106.465 5.05l-.708-.707a1 1 0 00-1.414 1.414l.707.707zm1.414 8.486l-.707.707a1 1 0 01-1.414-1.414l.707-.707a1 1 0 011.414 1.414zM4 11a1 1 0 100-2H3a1 1 0 000 2h1z"/>
+                    </svg>
+                    <svg class="w-5 h-5 block dark:hidden" fill="currentColor" viewBox="0 0 20 20">
+                        <path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z"/>
+                    </svg>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="max-w-7xl mx-auto px-4 py-6">
+        <!-- Navigation Tabs -->
+        <nav class="mb-6 overflow-x-auto no-print">
+            <div class="flex space-x-1 border-b border-gray-200 dark:border-gray-700 min-w-max">
+                {% for section in sections %}
+                <button onclick="showTab('{{ section }}')"
+                        class="tab-btn px-4 py-2 text-sm font-medium {% if loop.first %}active{% endif %}"
+                        data-tab="{{ section }}">
+                    {{ section|title }}
+                </button>
+                {% endfor %}
+            </div>
+        </nav>
+
+        <!-- Tab Contents -->
+        <div id="tab-contents">
+            {% for section in sections %}
+            <div id="tab-{{ section }}" class="tab-content {% if loop.first %}active{% endif %}">
+                {% include 'tabs/' ~ section ~ '.html.jinja2' %}
+            </div>
+            {% endfor %}
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 mt-12 py-6 no-print">
+        <div class="max-w-7xl mx-auto px-4 text-center text-sm text-gray-500 dark:text-gray-400">
+            <p>Generated on {{ date }} | Data sources: yfinance{% if mode == 'advanced' %}, Twelve Data, Finnhub{% endif %}</p>
+            <p class="mt-1">This report is for informational purposes only. Not financial advice.</p>
+        </div>
+    </footer>
+
+    <!-- JavaScript -->
+    <script>
+        // Tab switching
+        function showTab(tabName) {
+            // Hide all tabs
+            document.querySelectorAll('.tab-content').forEach(el => {
+                el.classList.remove('active');
+            });
+            document.querySelectorAll('.tab-btn').forEach(el => {
+                el.classList.remove('active');
+            });
+
+            // Show selected tab
+            document.getElementById('tab-' + tabName).classList.add('active');
+            document.querySelector(`[data-tab="${tabName}"]`).classList.add('active');
+        }
+
+        // Render Plotly charts
+        document.addEventListener('DOMContentLoaded', function() {
+            {% if charts.price %}
+            try {
+                const priceChartDiv = document.getElementById('price-chart');
+                if (priceChartDiv) {
+                    Plotly.newPlot(priceChartDiv, {{ charts.price.json|safe }}, {}, {responsive: true});
+                }
+            } catch(e) { console.error('Price chart error:', e); }
+            {% endif %}
+
+            {% if charts.technical and is_advanced %}
+            try {
+                const techChartDiv = document.getElementById('technical-chart');
+                if (techChartDiv) {
+                    Plotly.newPlot(techChartDiv, {{ charts.technical.json|safe }}, {}, {responsive: true});
+                }
+            } catch(e) { console.error('Technical chart error:', e); }
+            {% endif %}
+
+            {% if charts.revenue %}
+            try {
+                const revenueChartDiv = document.getElementById('revenue-chart');
+                if (revenueChartDiv) {
+                    Plotly.newPlot(revenueChartDiv, {{ charts.revenue.json|safe }}, {}, {responsive: true});
+                }
+            } catch(e) { console.error('Revenue chart error:', e); }
+            {% endif %}
+
+            {% if charts.dividend %}
+            try {
+                const dividendChartDiv = document.getElementById('dividend-chart');
+                if (dividendChartDiv) {
+                    Plotly.newPlot(dividendChartDiv, {{ charts.dividend.json|safe }}, {}, {responsive: true});
+                }
+            } catch(e) { console.error('Dividend chart error:', e); }
+            {% endif %}
+
+            {% if charts.ownership %}
+            try {
+                const ownershipChartDiv = document.getElementById('ownership-chart');
+                if (ownershipChartDiv) {
+                    Plotly.newPlot(ownershipChartDiv, {{ charts.ownership.json|safe }}, {}, {responsive: true});
+                }
+            } catch(e) { console.error('Ownership chart error:', e); }
+            {% endif %}
+
+            {% if charts.performance %}
+            try {
+                const perfChartDiv = document.getElementById('performance-chart');
+                if (perfChartDiv) {
+                    Plotly.newPlot(perfChartDiv, {{ charts.performance.json|safe }}, {}, {responsive: true});
+                }
+            } catch(e) { console.error('Performance chart error:', e); }
+            {% endif %}
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,15 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(python pipeline/generate_report.py)",
+      "Bash(python pipeline/config.py)",
+      "Bash(python pipeline/data/fetchers.py)",
+      "Bash(python pipeline/data/db.py)",
+      "Bash(python pipeline/analyze/calculators.py)",
+      "Bash(python pipeline/compile/chart_renderer.py)",
+      "Read",
+      "Write",
+      "Edit"
+    ]
+  }
+}

@@ -1,0 +1,33 @@
+{# Reusable metric card component #}
+{# Usage: {% include 'components/metric_card.html.jinja2' with context %} #}
+{# Required variables: label, value #}
+{# Optional: tooltip, unit, trend #}
+
+<div class="metric-card p-4 bg-white dark:bg-gray-800 rounded-lg shadow">
+    <div class="flex items-center justify-between">
+        <p class="text-xs text-gray-500 dark:text-gray-400 uppercase">
+            {{ label }}
+        </p>
+        {% if tooltip and is_beginner %}
+        <span class="text-gray-400 cursor-help" title="{{ tooltip }}">ℹ️</span>
+        {% endif %}
+    </div>
+    <p class="text-2xl font-bold mt-1">
+        {% if value is not none %}
+        {% if unit == '%' %}
+        {{ value|round(1) }}%
+        {% elif unit == '$' %}
+        ${{ value|round(2) }}
+        {% else %}
+        {{ value }}
+        {% endif %}
+        {% else %}
+        N/A
+        {% endif %}
+    </p>
+    {% if trend is defined %}
+    <p class="text-sm {{ 'text-up' if trend >= 0 else 'text-down' }}">
+        {{ '%+.1f'|format(trend) }}%
+    </p>
+    {% endif %}
+</div>

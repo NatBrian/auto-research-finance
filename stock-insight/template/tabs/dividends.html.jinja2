@@ -1,0 +1,99 @@
+{# Dividends Tab - Dividend history, yield, payout ratio #}
+
+{% if dividends %}
+<!-- Dividend Metrics -->
+<div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+    <div class="metric-card p-4 bg-white dark:bg-gray-800 rounded-lg shadow">
+        <p class="text-xs text-gray-500 dark:text-gray-400 uppercase">
+            {{ 'Dividend Yield' if is_beginner else 'Div Yield' }}
+            {% if is_beginner %}
+            <span class="text-gray-400 cursor-help" title="Annual dividends as percentage of stock price">ℹ️</span>
+            {% endif %}
+        </p>
+        <p class="text-2xl font-bold mt-1">
+            {% if metrics.get('dividend_yield') and metrics.dividend_yield.get('value') is not none %}
+            {{ metrics.dividend_yield.value|round(2) }}%
+            {% else %}
+            N/A
+            {% endif %}
+        </p>
+    </div>
+
+    <div class="metric-card p-4 bg-white dark:bg-gray-800 rounded-lg shadow">
+        <p class="text-xs text-gray-500 dark:text-gray-400 uppercase">
+            {{ 'TTM Dividend' if is_beginner else 'TTM Div' }}
+            {% if is_beginner %}
+            <span class="text-gray-400 cursor-help" title="Total dividends paid in the last 12 months">ℹ️</span>
+            {% endif %}
+        </p>
+        <p class="text-2xl font-bold mt-1">
+            {% if dividends.ttm_dividend %}
+            ${{ dividends.ttm_dividend|round(2) }}
+            {% else %}
+            N/A
+            {% endif %}
+        </p>
+    </div>
+
+    <div class="metric-card p-4 bg-white dark:bg-gray-800 rounded-lg shadow">
+        <p class="text-xs text-gray-500 dark:text-gray-400 uppercase">
+            {{ 'Total Payments' if is_beginner else 'Payments' }}
+        </p>
+        <p class="text-2xl font-bold mt-1">{{ dividends.total_dividends or 0 }}</p>
+    </div>
+
+    <div class="metric-card p-4 bg-white dark:bg-gray-800 rounded-lg shadow">
+        <p class="text-xs text-gray-500 dark:text-gray-400 uppercase">
+            {{ '5Y CAGR' if is_beginner else 'CAGR 5Y' }}
+            {% if is_beginner %}
+            <span class="text-gray-400 cursor-help" title="Compound annual growth rate of dividends over 5 years">ℹ️</span>
+            {% endif %}
+        </p>
+        <p class="text-2xl font-bold mt-1">
+            {% if metrics.get('dividend_cagr_5y') and metrics.dividend_cagr_5y.get('value') is not none %}
+            {{ '%+.1f'|format(metrics.dividend_cagr_5y.value) }}%
+            {% else %}
+            N/A
+            {% endif %}
+        </p>
+    </div>
+</div>
+
+<!-- Dividend Chart -->
+{% if charts.dividend %}
+<div class="bg-white dark:bg-gray-800 rounded-lg shadow p-4 mb-6">
+    <h3 class="text-lg font-semibold mb-4">Annual Dividend History</h3>
+    <div id="dividend-chart" style="width: 100%; height: 300px;"></div>
+</div>
+{% endif %}
+
+<!-- Dividend History Table -->
+{% if dividends.history %}
+<div class="bg-white dark:bg-gray-800 rounded-lg shadow p-4">
+    <h3 class="text-lg font-semibold mb-4">Recent Dividend Payments</h3>
+    <div class="overflow-x-auto" style="-webkit-overflow-scrolling: touch;">
+        <table class="w-full text-sm">
+            <thead>
+                <tr class="border-b dark:border-gray-700">
+                    <th class="p-2 text-left sticky-col">Date</th>
+                    <th class="p-2 text-right">Amount</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for div in (dividends.history[:10] if is_beginner else dividends.history) %}
+                <tr class="border-b dark:border-gray-700">
+                    <td class="p-2 sticky-col">{{ div.date }}</td>
+                    <td class="p-2 text-right">${{ div.amount|round(4) }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endif %}
+
+{% else %}
+<div class="bg-white dark:bg-gray-800 rounded-lg shadow p-4">
+    <p class="text-gray-500 dark:text-gray-400">No dividend data available for this ticker.</p>
+</div>
+{% endif %}

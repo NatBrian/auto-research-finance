@@ -1,0 +1,177 @@
+{# Financials Tab - Health metrics, statements, revenue chart #}
+
+<!-- Health Metrics -->
+<div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+    {% for metric_key in ['roe', 'roa', 'net_margin', 'debt_equity'] %}
+    {% set metric = metrics.get(metric_key, {}) %}
+    {% set label = metric.get('label', {}) %}
+    <div class="metric-card p-4 bg-white dark:bg-gray-800 rounded-lg shadow">
+        <div class="flex items-center justify-between">
+            <p class="text-xs text-gray-500 dark:text-gray-400 uppercase">
+                {{ label.get('display', metric_key) }}
+            </p>
+            {% if is_beginner and label.get('tooltip') %}
+            <span class="text-gray-400 cursor-help" title="{{ label.tooltip }}">ℹ️</span>
+            {% endif %}
+        </div>
+        <p class="text-2xl font-bold mt-1">
+            {% if metric and metric.get('value') is not none %}
+            {% if metric_key in ['roe', 'roa', 'net_margin'] %}
+            {{ metric.get('value')|round(1) }}%
+            {% else %}
+            {{ metric.get('value')|round(2) }}
+            {% endif %}
+            {% else %}
+            N/A
+            {% endif %}
+        </p>
+    </div>
+    {% endfor %}
+</div>
+
+<!-- Growth Metrics -->
+{% if metrics.get('revenue_yoy') or metrics.get('net_income_yoy') %}
+<div class="bg-white dark:bg-gray-800 rounded-lg shadow p-4 mb-6">
+    <h3 class="text-lg font-semibold mb-4">Year-over-Year Growth</h3>
+    <div class="grid grid-cols-2 gap-4">
+        {% if metrics.get('revenue_yoy') and metrics.revenue_yoy.get('value') is not none %}
+        <div class="p-3 bg-gray-50 dark:bg-gray-700 rounded">
+            <p class="text-sm text-gray-500 dark:text-gray-400">Revenue Growth</p>
+            <p class="text-xl font-bold {{ 'text-up' if metrics.revenue_yoy.value >= 0 else 'text-down' }}">
+                {{ '%+.1f'|format(metrics.revenue_yoy.value) }}%
+            </p>
+        </div>
+        {% endif %}
+        {% if metrics.get('net_income_yoy') and metrics.net_income_yoy.get('value') is not none %}
+        <div class="p-3 bg-gray-50 dark:bg-gray-700 rounded">
+            <p class="text-sm text-gray-500 dark:text-gray-400">Net Income Growth</p>
+            <p class="text-xl font-bold {{ 'text-up' if metrics.net_income_yoy.value >= 0 else 'text-down' }}">
+                {{ '%+.1f'|format(metrics.net_income_yoy.value) }}%
+            </p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endif %}
+
+<!-- Revenue Chart -->
+{% if charts.revenue %}
+<div class="bg-white dark:bg-gray-800 rounded-lg shadow p-4 mb-6">
+    <h3 class="text-lg font-semibold mb-4">Revenue & Net Income</h3>
+    <div id="revenue-chart" style="width: 100%; height: 350px;"></div>
+</div>
+{% endif %}
+
+<!-- Financial Statements -->
+{% if financials %}
+<div class="space-y-6">
+    <!-- Income Statement -->
+    {% if financials.income_statement and financials.income_statement|length > 0 %}
+    <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-4">
+        <h3 class="text-lg font-semibold mb-4">Income Statement</h3>
+        <div class="overflow-x-auto" style="-webkit-overflow-scrolling: touch;">
+            <table class="w-full text-sm">
+                <thead>
+                    <tr class="border-b dark:border-gray-700">
+                        <th class="p-2 text-left sticky-col">Date</th>
+                        <th class="p-2 text-right">Revenue</th>
+                        <th class="p-2 text-right">Gross Profit</th>
+                        <th class="p-2 text-right">Op Income</th>
+                        <th class="p-2 text-right">Net Income</th>
+                        <th class="p-2 text-right">EPS</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for stmt in (financials.income_statement[:5] if is_beginner else financials.income_statement) %}
+                    <tr class="border-b dark:border-gray-700">
+                        <td class="p-2 sticky-col font-medium">{{ (stmt.get('Date') or 'Q' ~ loop.index)|string|truncate(10, True, '', 0) }}</td>
+                        <td class="p-2 text-right">{{ stmt.get('Total Revenue')|format_number if stmt.get('Total Revenue') else '-' }}</td>
+                        <td class="p-2 text-right">{{ stmt.get('Gross Profit')|format_number if stmt.get('Gross Profit') else '-' }}</td>
+                        <td class="p-2 text-right">{{ stmt.get('Operating Income')|format_number if stmt.get('Operating Income') else '-' }}</td>
+                        <td class="p-2 text-right">{{ stmt.get('Net Income')|format_number if stmt.get('Net Income') else '-' }}</td>
+                        <td class="p-2 text-right">{{ stmt.get('Basic EPS')|round(2) if stmt.get('Basic EPS') else '-' }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Balance Sheet -->
+    {% if financials.balance_sheet and financials.balance_sheet|length > 0 %}
+    <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-4">
+        <h3 class="text-lg font-semibold mb-4">Balance Sheet</h3>
+        <div class="overflow-x-auto" style="-webkit-overflow-scrolling: touch;">
+            <table class="w-full text-sm">
+                <thead>
+                    <tr class="border-b dark:border-gray-700">
+                        <th class="p-2 text-left sticky-col">Date</th>
+                        <th class="p-2 text-right">Assets</th>
+                        <th class="p-2 text-right">Liabilities</th>
+                        <th class="p-2 text-right">Equity</th>
+                        <th class="p-2 text-right">Debt</th>
+                        <th class="p-2 text-right">Cash</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for stmt in (financials.balance_sheet[:5] if is_beginner else financials.balance_sheet) %}
+                    <tr class="border-b dark:border-gray-700">
+                        <td class="p-2 sticky-col font-medium">{{ (stmt.get('Date') or 'Q' ~ loop.index)|string|truncate(10, True, '', 0) }}</td>
+                        <td class="p-2 text-right">{{ stmt.get('Total Assets')|format_number if stmt.get('Total Assets') else '-' }}</td>
+                        <td class="p-2 text-right">{{ (stmt.get('Total Liabilities') or stmt.get('Total Liab') or stmt.get('Total Liabilities Net Minority Interest'))|format_number if (stmt.get('Total Liabilities') or stmt.get('Total Liab') or stmt.get('Total Liabilities Net Minority Interest')) else '-' }}</td>
+                        <td class="p-2 text-right">{{ (stmt.get('Total Stockholder Equity') or stmt.get('Stockholders Equity'))|format_number if (stmt.get('Total Stockholder Equity') or stmt.get('Stockholders Equity')) else '-' }}</td>
+                        <td class="p-2 text-right">{{ stmt.get('Total Debt')|format_number if stmt.get('Total Debt') else '-' }}</td>
+                        <td class="p-2 text-right">{{ (stmt.get('Cash') or stmt.get('Cash And Cash Equivalents'))|format_number if (stmt.get('Cash') or stmt.get('Cash And Cash Equivalents')) else '-' }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Cash Flow -->
+    {% if financials.cashflow and financials.cashflow|length > 0 %}
+    <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-4">
+        <h3 class="text-lg font-semibold mb-4">Cash Flow</h3>
+        <div class="overflow-x-auto" style="-webkit-overflow-scrolling: touch;">
+            <table class="w-full text-sm">
+                <thead>
+                    <tr class="border-b dark:border-gray-700">
+                        <th class="p-2 text-left sticky-col">Date</th>
+                        <th class="p-2 text-right">Op CF</th>
+                        <th class="p-2 text-right">Free CF</th>
+                        <th class="p-2 text-right">CapEx</th>
+                        <th class="p-2 text-right">Dividends</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for stmt in (financials.cashflow[:5] if is_beginner else financials.cashflow) %}
+                    <tr class="border-b dark:border-gray-700">
+                        <td class="p-2 sticky-col font-medium">{{ (stmt.get('Date') or 'Q' ~ loop.index)|string|truncate(10, True, '', 0) }}</td>
+                        <td class="p-2 text-right">{{ stmt.get('Operating Cash Flow')|format_number if stmt.get('Operating Cash Flow') else '-' }}</td>
+                        <td class="p-2 text-right">{{ stmt.get('Free Cash Flow')|format_number if stmt.get('Free Cash Flow') else '-' }}</td>
+                        <td class="p-2 text-right">{{ stmt.get('Capital Expenditure')|format_number if stmt.get('Capital Expenditure') else '-' }}</td>
+                        <td class="p-2 text-right">{{ stmt.get('Cash Dividends Paid')|format_number if stmt.get('Cash Dividends Paid') else '-' }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% else %}
+<div class="bg-white dark:bg-gray-800 rounded-lg shadow p-4">
+    <p class="text-gray-500 dark:text-gray-400">Financial data not available for this ticker.</p>
+</div>
+{% endif %}
+
+{% if is_advanced and charts.technical %}
+<!-- Technical Analysis Chart -->
+<div class="bg-white dark:bg-gray-800 rounded-lg shadow p-4 mt-6">
+    <h3 class="text-lg font-semibold mb-4">Technical Analysis</h3>
+    <div id="technical-chart" style="width: 100%; height: 600px;"></div>
+</div>
+{% endif %}

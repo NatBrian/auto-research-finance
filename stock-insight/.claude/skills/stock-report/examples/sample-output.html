@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AAPL - Financial Report (Sample)</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = { darkMode: 'class' }
+        if (localStorage.getItem('darkMode') === 'true') {
+            document.documentElement.classList.add('dark');
+        }
+    </script>
+    <script src="https://cdn.plot.ly/plotly-2.27.0.min.js"></script>
+</head>
+<body class="bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-gray-100 min-h-screen">
+    <header class="bg-white dark:bg-gray-800 shadow-sm sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-4 py-4 flex justify-between items-center">
+            <div class="flex items-center space-x-4">
+                <h1 class="text-2xl font-bold">AAPL</h1>
+                <span class="text-gray-500 dark:text-gray-400 hidden sm:inline">Apple Inc.</span>
+            </div>
+            <div class="flex items-center space-x-4">
+                <span class="text-sm text-gray-500 dark:text-gray-400">2024-01-15</span>
+                <button onclick="document.documentElement.classList.toggle('dark');localStorage.setItem('darkMode',document.documentElement.classList.contains('dark'))" class="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700">
+                    <svg class="w-5 h-5 hidden dark:block" fill="currentColor" viewBox="0 0 20 20"><path d="M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zm4 8a4 4 0 11-8 0 4 4 0 018 0zm-.464 4.95l.707.707a1 1 0 001.414-1.414l-.707-.707a1 1 0 00-1.414 1.414zm2.12-10.607a1 1 0 010 1.414l-.706.707a1 1 0 11-1.414-1.414l.707-.707a1 1 0 011.414 0zM17 11a1 1 0 100-2h-1a1 1 0 100 2h1zm-7 4a1 1 0 011 1v1a1 1 0 11-2 0v-1a1 1 0 011-1zM5.05 6.464A1 1 0 106.465 5.05l-.708-.707a1 1 0 00-1.414 1.414l.707.707zm1.414 8.486l-.707.707a1 1 0 01-1.414-1.414l.707-.707a1 1 0 011.414 1.414zM4 11a1 1 0 100-2H3a1 1 0 000 2h1z"/></svg>
+                    <svg class="w-5 h-5 block dark:hidden" fill="currentColor" viewBox="0 0 20 20"><path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z"/></svg>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <main class="max-w-7xl mx-auto px-4 py-6">
+        <!-- Sample Price Cards -->
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+            <div class="p-4 bg-white dark:bg-gray-800 rounded-lg shadow">
+                <p class="text-xs text-gray-500 dark:text-gray-400 uppercase">Price</p>
+                <p class="text-2xl font-bold">$185.92</p>
+                <p class="text-sm text-up">+1.24%</p>
+            </div>
+            <div class="p-4 bg-white dark:bg-gray-800 rounded-lg shadow">
+                <p class="text-xs text-gray-500 dark:text-gray-400 uppercase">Volume</p>
+                <p class="text-2xl font-bold">52.3M</p>
+                <p class="text-sm text-gray-500">Avg: 58.1M</p>
+            </div>
+            <div class="p-4 bg-white dark:bg-gray-800 rounded-lg shadow">
+                <p class="text-xs text-gray-500 dark:text-gray-400 uppercase">Market Cap</p>
+                <p class="text-2xl font-bold">$2.89T</p>
+            </div>
+            <div class="p-4 bg-white dark:bg-gray-800 rounded-lg shadow">
+                <p class="text-xs text-gray-500 dark:text-gray-400 uppercase">52W Range</p>
+                <div class="mt-2">
+                    <div class="flex justify-between text-xs text-gray-500 mb-1">
+                        <span>$124.17</span>
+                        <span>$199.62</span>
+                    </div>
+                    <div class="h-2 bg-gray-200 dark:bg-gray-700 rounded-full relative">
+                        <div class="absolute h-full bg-blue-500 rounded-full" style="width: 50%"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Sample Valuation Metrics -->
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+            <div class="p-4 bg-white dark:bg-gray-800 rounded-lg shadow">
+                <p class="text-xs text-gray-500 dark:text-gray-400 uppercase">P/E Ratio</p>
+                <p class="text-2xl font-bold">30.5</p>
+            </div>
+            <div class="p-4 bg-white dark:bg-gray-800 rounded-lg shadow">
+                <p class="text-xs text-gray-500 dark:text-gray-400 uppercase">P/B Ratio</p>
+                <p class="text-2xl font-bold">47.2</p>
+            </div>
+            <div class="p-4 bg-white dark:bg-gray-800 rounded-lg shadow">
+                <p class="text-xs text-gray-500 dark:text-gray-400 uppercase">P/S Ratio</p>
+                <p class="text-2xl font-bold">7.8</p>
+            </div>
+            <div class="p-4 bg-white dark:bg-gray-800 rounded-lg shadow">
+                <p class="text-xs text-gray-500 dark:text-gray-400 uppercase">P/CF Ratio</p>
+                <p class="text-2xl font-bold">24.3</p>
+            </div>
+        </div>
+
+        <!-- Sample Financials -->
+        <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-4 mb-6">
+            <h3 class="text-lg font-semibold mb-4">Financial Health</h3>
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <div class="p-3 bg-gray-50 dark:bg-gray-700 rounded">
+                    <p class="text-xs text-gray-500 dark:text-gray-400">ROE</p>
+                    <p class="text-xl font-bold">147.1%</p>
+                </div>
+                <div class="p-3 bg-gray-50 dark:bg-gray-700 rounded">
+                    <p class="text-xs text-gray-500 dark:text-gray-400">ROA</p>
+                    <p class="text-xl font-bold">28.3%</p>
+                </div>
+                <div class="p-3 bg-gray-50 dark:bg-gray-700 rounded">
+                    <p class="text-xs text-gray-500 dark:text-gray-400">Net Margin</p>
+                    <p class="text-xl font-bold">25.3%</p>
+                </div>
+                <div class="p-3 bg-gray-50 dark:bg-gray-700 rounded">
+                    <p class="text-xs text-gray-500 dark:text-gray-400">D/E Ratio</p>
+                    <p class="text-xl font-bold">1.87</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-4">
+            <h3 class="text-lg font-semibold mb-4">About Apple Inc.</h3>
+            <p class="text-gray-600 dark:text-gray-400 text-sm leading-relaxed">
+                Apple Inc. designs, manufactures, and markets smartphones, personal computers, tablets, wearables, and accessories worldwide. The company offers iPhone, Mac, iPad, and wearables, home, and accessories comprising AirPods, Apple TV, Apple Watch, Beats products, and HomePod.
+            </p>
+            <div class="mt-3 flex flex-wrap gap-2">
+                <span class="px-2 py-1 bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 text-xs rounded">Technology</span>
+                <span class="px-2 py-1 bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200 text-xs rounded">Consumer Electronics</span>
+            </div>
+        </div>
+    </main>
+
+    <footer class="bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 mt-12 py-6">
+        <div class="max-w-7xl mx-auto px-4 text-center text-sm text-gray-500 dark:text-gray-400">
+            <p>Generated on 2024-01-15 | Data sources: yfinance</p>
+            <p class="mt-1">This report is for informational purposes only. Not financial advice.</p>
+        </div>
+    </footer>
+</body>
+</html>

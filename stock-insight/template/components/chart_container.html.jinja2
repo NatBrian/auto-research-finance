@@ -1,0 +1,11 @@
+{# Reusable chart container component #}
+{# Usage: {% include 'components/chart_container.html.jinja2' with context %} #}
+{# Required variables: chart_id, title #}
+{# Optional: height #}
+
+<div class="bg-white dark:bg-gray-800 rounded-lg shadow p-4">
+    {% if title %}
+    <h3 class="text-lg font-semibold mb-4">{{ title }}</h3>
+    {% endif %}
+    <div id="{{ chart_id }}" style="width: 100%; height: {{ height|default('400px') }};"></div>
+</div>
