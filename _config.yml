@@ -26,5 +26,8 @@ exclude:
   - "tradingagents-cc/outputs/"
   - "stock-insight/output/"
 
+  # Jinja2 template docs with {% include %} tags — Jekyll crashes on them
+  - "stock-insight/template/"
+
   # Old / inferior sample (kept in repo but not rendered on Pages)
   - "paper-to-factor-pipeline/outputs/examples/"
