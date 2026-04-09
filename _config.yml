@@ -1,6 +1,11 @@
 # GitHub Pages configuration
 # Exclude generated/build artifacts while keeping curated sample files.
 
+# Force kramdown with GFM tables (GitHub Pages default, but being explicit)
+markdown: kramdown
+kramdown:
+  input: GFM
+
 exclude:
   # Python artifacts
   - "__pycache__"
