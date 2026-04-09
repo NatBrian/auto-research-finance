@@ -10,7 +10,7 @@
 
 ## 1. Overview
 
-TradingAgents-CC is a native Claude Code re-implementation of the [TauricResearch TradingAgents](https://arxiv.org/abs/2412.20138) framework. Instead of LangGraph's node/edge DAG, it uses:
+TradingAgents-CC is a native Claude Code re-implementation of the [TauricResearch](https://arxiv.org/abs/2412.20138) framework. Instead of LangGraph's node/edge DAG, it uses:
 
 | Original (LangGraph) | TradingAgents-CC (Claude Code) |
 |---|---|
@@ -26,6 +26,11 @@ TradingAgents-CC is a native Claude Code re-implementation of the [TauricResearc
 - **Markdown State Bus**: `session/trading_session.md` is the single source of truth for live sessions
 - **MCP Tool Providers**: Four MCP servers provide market data, news, sentiment, and exchange capabilities
 - **Pluggable Exchange**: Swap between paper trading, Alpaca, and IBKR via config
+
+### Example Session
+**[View NVDA Trade Example →](https://github.com/NatBrian/auto-research-finance/blob/main/tradingagents-cc/session/examples/NVDA_2026-04-09_1775720838/trading_session.md)**
+
+See a complete successful trade walkthrough with all analyst reports, bull/bear debates, risk assessment, and the final order execution.
 
 ---
 

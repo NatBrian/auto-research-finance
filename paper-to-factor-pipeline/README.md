@@ -32,6 +32,16 @@ The workflow is designed to run inside Claude Code using **Claude Code skills** 
 
 ---
 
+## Sample Run
+
+> **Disclaimer:** The following is an example output from a sample pipeline run on limited test.
+
+**[View Sample Report →](https://github.com/NatBrian/auto-research-finance/blob/main/paper-to-factor-pipeline/outputs/example_2/FINAL_REPORT.md)**
+
+Sample run validates the Jegadeesh & Titman (1993) momentum paper — Sharpe 1.26, +19.4% annual return, with full quintile analysis, ML baseline comparison, and theoretical validation against the paper's original claims.
+
+---
+
 ## 2. Architecture
 
 ```mermaid
