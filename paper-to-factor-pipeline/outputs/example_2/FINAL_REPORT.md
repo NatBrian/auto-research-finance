@@ -1,4 +1,4 @@
-![1775743012525](image/FINAL_REPORT/1775743012525.png)---
+---
 layout: default
 title: "Jegadeesh & Titman (1993) — Momentum Strategy Report"
 ---
