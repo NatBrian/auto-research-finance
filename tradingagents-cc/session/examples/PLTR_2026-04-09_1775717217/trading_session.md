@@ -1,3 +1,8 @@
+---
+layout: default
+title: "PLTR Trading Session — 2026-04-09"
+---
+
 # Trading Session
 
 ## Session Info

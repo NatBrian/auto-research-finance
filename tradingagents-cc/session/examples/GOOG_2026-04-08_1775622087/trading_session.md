@@ -1,3 +1,8 @@
+---
+layout: default
+title: "GOOG Trading Session — 2026-04-08"
+---
+
 # Trading Session
 
 ## Session Info

@@ -1,3 +1,8 @@
+---
+layout: default
+title: "AAPL Trading Session — 2026-04-06"
+---
+
 # Trading Session
 
 ## Session Info

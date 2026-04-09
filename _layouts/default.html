@@ -1,0 +1,31 @@
+---
+---
+<!DOCTYPE html>
+<html lang="{{ site.lang | default: "en-US" }}">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{{ page.title | default: site.title }}</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/github-markdown-css/5.5.1/github-markdown-dark.min.css">
+  {% seo %}
+  <style>
+    body { background: #0d1117; padding: 2rem; font-family: Inter, -apple-system, sans-serif; }
+    .markdown-body { max-width: 960px; margin: 0 auto; background: #0d1117; }
+    .markdown-body pre { background: #161b22; border-radius: 6px; }
+    .markdown-body code { font-family: JetBrains Mono, monospace; font-size: 0.9em; }
+    .markdown-body table { display: block; overflow-x: auto; }
+    .markdown-body img { max-width: 100%; }
+    a { color: #58a6ff; }
+    h1:first-of-type { border-bottom: 1px solid #21262d; padding-bottom: 0.3em; }
+  </style>
+</head>
+<body>
+  <div class="markdown-body">
+    <h1>{{ page.title }}</h1>
+    {{ content }}
+  </div>
+</body>
+</html>

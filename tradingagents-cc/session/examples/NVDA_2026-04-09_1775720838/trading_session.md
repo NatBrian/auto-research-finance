@@ -1,3 +1,8 @@
+---
+layout: default
+title: "NVDA Trading Session — 2026-04-09"
+---
+
 # Trading Session
 
 ![alpaca-dashboard](alpaca_nvda_2026_04_09.webp)
