@@ -1,28 +1,30 @@
-{# Reusable data table component with sticky first column #}
+{# Reusable data table component - Professional Financial Dashboard Style #}
 {# Usage: {% include 'components/data_table.html.jinja2' with context %} #}
 {# Required variables: headers, rows #}
 {# Optional: title, max_rows (for beginner mode) #}
 
-<div class="bg-white dark:bg-gray-800 rounded-lg shadow p-4">
+<div class="card overflow-hidden">
     {% if title %}
-    <h3 class="text-lg font-semibold mb-4">{{ title }}</h3>
+    <div class="p-4 border-b border-slate-700/50">
+        <h3 class="font-semibold text-slate-200">{{ title }}</h3>
+    </div>
     {% endif %}
 
-    <div class="overflow-x-auto" style="-webkit-overflow-scrolling: touch;">
-        <table class="w-full text-sm">
+    <div class="overflow-x-auto">
+        <table class="data-table">
             <thead>
-                <tr class="border-b dark:border-gray-700">
+                <tr>
                     {% for header in headers %}
-                    <th class="p-2 text-left {% if loop.first %}sticky-col{% endif %}">{{ header }}</th>
+                    <th class="{{ 'sticky-col' if loop.first }} {{ 'text-right' if not loop.first }}">{{ header }}</th>
                     {% endfor %}
                 </tr>
             </thead>
             <tbody>
                 {% set display_rows = rows[:max_rows] if max_rows else rows %}
                 {% for row in display_rows %}
-                <tr class="border-b dark:border-gray-700">
+                <tr>
                     {% for cell in row %}
-                    <td class="p-2 {% if loop.first %}sticky-col font-medium{% endif %} {% if not loop.first %}text-right{% endif %}">
+                    <td class="{{ 'sticky-col font-medium' if loop.first }} {{ 'text-right font-mono' if not loop.first }}">
                         {{ cell }}
                     </td>
                     {% endfor %}
@@ -33,8 +35,10 @@
     </div>
 
     {% if max_rows and rows|length > max_rows %}
-    <p class="text-xs text-gray-500 dark:text-gray-400 mt-2">
-        Showing {{ max_rows }} of {{ rows|length }} rows.
-    </p>
+    <div class="p-3 border-t border-slate-700/30 text-center">
+        <p class="text-xs text-slate-500">
+            Showing {{ max_rows }} of {{ rows|length }} rows.
+        </p>
+    </div>
     {% endif %}
 </div>

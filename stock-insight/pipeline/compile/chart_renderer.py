@@ -184,7 +184,7 @@ def create_technical_chart(price_data: Optional[Dict], metrics: Optional[Dict] =
                 x=df.index,
                 y=df['Close'],
                 name="Price",
-                line=dict(color="#1f2937", width=1),
+                line=dict(color="#60a5fa", width=1.5),
             ),
             row=1, col=1
         )
@@ -222,15 +222,17 @@ def create_technical_chart(price_data: Optional[Dict], metrics: Optional[Dict] =
         delta = df['Close'].diff()
         gain = (delta.where(delta > 0, 0)).rolling(window=14).mean()
         loss = (-delta.where(delta < 0, 0)).rolling(window=14).mean()
-        rs = gain / loss
+        rs = gain / loss.replace(0, float('nan'))
         rsi = 100 - (100 / (1 + rs))
+        # Fill NaN with 50 (neutral) for display
+        rsi = rsi.fillna(50)
 
         fig.add_trace(
             go.Scatter(
                 x=df.index,
                 y=rsi,
                 name="RSI",
-                line=dict(color="#8b5cf6", width=1),
+                line=dict(color="#8b5cf6", width=1.5),
             ),
             row=2, col=1
         )
@@ -249,7 +251,7 @@ def create_technical_chart(price_data: Optional[Dict], metrics: Optional[Dict] =
                 x=df.index,
                 y=macd,
                 name="MACD",
-                line=dict(color="#3b82f6", width=1),
+                line=dict(color="#3b82f6", width=1.5),
             ),
             row=3, col=1
         )
@@ -258,7 +260,7 @@ def create_technical_chart(price_data: Optional[Dict], metrics: Optional[Dict] =
                 x=df.index,
                 y=signal,
                 name="Signal",
-                line=dict(color="#f97316", width=1),
+                line=dict(color="#f97316", width=1.5),
             ),
             row=3, col=1
         )
@@ -448,19 +450,28 @@ def create_ownership_chart(ownership: Optional[Dict]) -> Optional[Dict]:
                 labels=names,
                 values=values,
                 hole=0.4,
-                textinfo="label+percent",
+                textinfo="percent",
                 textposition="inside",
                 insidetextorientation="radial",
-                showlegend=False,
+                showlegend=True,
+                legendgroup="holders",
             )
         )
 
         fig.update_layout(
-            height=450,
-            showlegend=False,
+            height=400,
+            showlegend=True,
+            legend=dict(
+                orientation="v",
+                yanchor="middle",
+                y=0.5,
+                xanchor="left",
+                x=1.02,
+                font=dict(size=10),
+            ),
             paper_bgcolor="rgba(0,0,0,0)",
             plot_bgcolor="rgba(0,0,0,0)",
-            margin=dict(l=20, r=20, t=30, b=20),
+            margin=dict(l=20, r=120, t=20, b=20),
         )
 
         return {
@@ -509,10 +520,17 @@ def create_performance_chart(price_data: Optional[Dict]) -> Optional[Dict]:
         for label, days in periods.items():
             if label == "YTD":
                 # Find first trading day of year
-                year_start = df[df.index.year == df.index[-1].year].iloc[0]
-                start_price = year_start['Close']
-            elif days and len(df) > days:
-                start_price = df['Close'].iloc[-days]
+                ytd_df = df[df.index.year == df.index[-1].year]
+                if not ytd_df.empty:
+                    start_price = ytd_df.iloc[0]['Close']
+                else:
+                    continue
+            elif days:
+                if len(df) >= days:
+                    start_price = df['Close'].iloc[-days]
+                else:
+                    # Use oldest available data point
+                    start_price = df['Close'].iloc[0]
             else:
                 continue
 

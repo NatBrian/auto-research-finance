@@ -75,15 +75,29 @@ def fetch_yfinance_price(stock: yf.Ticker) -> Optional[Dict]:
             change = current_price - prev_close
             change_pct = (change / prev_close) * 100
 
+        # Drop rows with NaN values in essential columns
+        hist_clean = hist.dropna(subset=['Open', 'High', 'Low', 'Close'])
+
         # Convert history to serializable format
-        hist_df = hist.reset_index()
+        hist_df = hist_clean.reset_index()
         # Convert Date column to string if it's a Timestamp
         if 'Date' in hist_df.columns:
             hist_df['Date'] = hist_df['Date'].astype(str)
         elif 'index' in hist_df.columns:
             hist_df['index'] = hist_df['index'].astype(str)
 
+        # Select only essential columns and drop any remaining NaN
+        essential_cols = ['Date', 'Open', 'High', 'Low', 'Close', 'Volume']
+        available_cols = [c for c in essential_cols if c in hist_df.columns]
+        hist_df = hist_df[available_cols]
+
+        # Replace any remaining NaN with None for JSON serialization
+        hist_df = hist_df.where(pd.notna(hist_df), None)
+
         history = hist_df.to_dict(orient="records")
+
+        # Filter out records with None values in essential fields
+        history = [h for h in history if all(h.get(c) is not None for c in ['Open', 'High', 'Low', 'Close'])]
 
         return {
             "current_price": current_price,

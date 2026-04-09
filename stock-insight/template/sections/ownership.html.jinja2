@@ -1,0 +1,79 @@
+{# Ownership Section - Institutional holders #}
+
+{% if ownership and ownership.holders %}
+<section class="space-y-4">
+    <h2 class="text-lg font-semibold text-slate-100 flex items-center gap-2">
+        <svg class="w-5 h-5 text-brand-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path>
+        </svg>
+        Institutional Ownership
+    </h2>
+
+    <div class="grid grid-cols-2 gap-4">
+        <div class="card metric-card p-4">
+            <span class="text-xs text-slate-500 uppercase tracking-wider">Institutions</span>
+            <span class="text-2xl font-bold text-slate-100 block mt-1">{{ ownership.total_institutions or ownership.holders|length }}</span>
+        </div>
+        <div class="card metric-card p-4">
+            <span class="text-xs text-slate-500 uppercase tracking-wider">Top Holder %</span>
+            {% set top_holder = ownership.holders[0] if ownership.holders else {} %}
+            <span class="text-2xl font-bold text-slate-100 block mt-1">
+                {% set pct = top_holder.get('% Out') or top_holder.get('pctHeld') %}
+                {% if pct %}
+                {{ (pct * 100 if pct < 1 else pct)|round(2) }}%
+                {% else %}
+                <span class="text-slate-600">N/A</span>
+                {% endif %}
+            </span>
+        </div>
+    </div>
+
+    {% if charts.ownership %}
+    <div class="card p-6">
+        <h3 class="font-semibold text-slate-200 mb-4">Top Institutional Holders</h3>
+        <div id="ownership-chart" class="chart-container" style="height: 350px;"></div>
+    </div>
+    {% endif %}
+
+    <div class="card overflow-hidden">
+        <div class="p-4 border-b border-slate-700/50">
+            <h3 class="font-semibold text-slate-200">Institutional Holdings</h3>
+        </div>
+        <div class="overflow-x-auto">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th class="sticky-col">Holder</th>
+                        <th class="text-right">Shares</th>
+                        <th class="text-right">% Out</th>
+                        <th class="text-right">Value</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for holder in (ownership.holders[:10] if is_beginner else ownership.holders) %}
+                    <tr>
+                        <td class="sticky-col font-medium">{{ (holder.get('Holder') or holder.get('holder', 'Unknown'))[:40] }}</td>
+                        <td class="text-right font-mono">
+                            {% set shares = holder.get('Shares') or holder.get('shares') %}
+                            {{ shares|format_number if shares else '-' }}
+                        </td>
+                        <td class="text-right font-mono">
+                            {% set pct = holder.get('% Out') or holder.get('pctOut') or holder.get('pctHeld') %}
+                            {% if pct %}
+                            {{ (pct * 100 if pct < 1 else pct)|round(2) }}%
+                            {% else %}
+                            -
+                            {% endif %}
+                        </td>
+                        <td class="text-right font-mono">
+                            {% set value = holder.get('Value') or holder.get('value') %}
+                            {{ value|format_number if value else '-' }}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</section>
+{% endif %}

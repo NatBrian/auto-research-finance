@@ -1,0 +1,115 @@
+{# Financial Statements Section - Income, Balance Sheet, Cash Flow #}
+
+{% if financials %}
+<section class="space-y-4">
+    <h2 class="text-lg font-semibold text-slate-100 flex items-center gap-2">
+        <svg class="w-5 h-5 text-brand-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+        </svg>
+        Financial Statements
+    </h2>
+
+    <!-- Income Statement -->
+    {% if financials.income_statement and financials.income_statement|length > 0 %}
+    <div class="card overflow-hidden">
+        <div class="p-4 border-b border-slate-700/50">
+            <h3 class="font-semibold text-slate-200">Income Statement</h3>
+        </div>
+        <div class="overflow-x-auto">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th class="sticky-col">Period</th>
+                        <th class="text-right">Revenue</th>
+                        <th class="text-right">Gross Profit</th>
+                        <th class="text-right">Op Income</th>
+                        <th class="text-right">Net Income</th>
+                        <th class="text-right">EPS</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for stmt in (financials.income_statement[:5] if is_beginner else financials.income_statement) %}
+                    <tr>
+                        <td class="sticky-col font-medium">{{ (stmt.get('Date') or 'Q' ~ loop.index)|string|truncate(10, True, '', 0) }}</td>
+                        <td class="text-right font-mono">{{ stmt.get('Total Revenue')|format_number if stmt.get('Total Revenue') else '-' }}</td>
+                        <td class="text-right font-mono">{{ stmt.get('Gross Profit')|format_number if stmt.get('Gross Profit') else '-' }}</td>
+                        <td class="text-right font-mono">{{ stmt.get('Operating Income')|format_number if stmt.get('Operating Income') else '-' }}</td>
+                        <td class="text-right font-mono {{ 'text-up' if stmt.get('Net Income', 0) > 0 else 'text-down' }}">{{ stmt.get('Net Income')|format_number if stmt.get('Net Income') else '-' }}</td>
+                        <td class="text-right font-mono">${{ stmt.get('Basic EPS')|round(2) if stmt.get('Basic EPS') else '-' }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Balance Sheet -->
+    {% if financials.balance_sheet and financials.balance_sheet|length > 0 %}
+    <div class="card overflow-hidden">
+        <div class="p-4 border-b border-slate-700/50">
+            <h3 class="font-semibold text-slate-200">Balance Sheet</h3>
+        </div>
+        <div class="overflow-x-auto">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th class="sticky-col">Period</th>
+                        <th class="text-right">Assets</th>
+                        <th class="text-right">Liabilities</th>
+                        <th class="text-right">Equity</th>
+                        <th class="text-right">Debt</th>
+                        <th class="text-right">Cash</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for stmt in (financials.balance_sheet[:5] if is_beginner else financials.balance_sheet) %}
+                    <tr>
+                        <td class="sticky-col font-medium">{{ (stmt.get('Date') or 'Q' ~ loop.index)|string|truncate(10, True, '', 0) }}</td>
+                        <td class="text-right font-mono">{{ stmt.get('Total Assets')|format_number if stmt.get('Total Assets') else '-' }}</td>
+                        <td class="text-right font-mono">{{ (stmt.get('Total Liabilities') or stmt.get('Total Liab') or stmt.get('Total Liabilities Net Minority Interest'))|format_number if (stmt.get('Total Liabilities') or stmt.get('Total Liab') or stmt.get('Total Liabilities Net Minority Interest')) else '-' }}</td>
+                        <td class="text-right font-mono">{{ (stmt.get('Total Stockholder Equity') or stmt.get('Stockholders Equity'))|format_number if (stmt.get('Total Stockholder Equity') or stmt.get('Stockholders Equity')) else '-' }}</td>
+                        <td class="text-right font-mono">{{ stmt.get('Total Debt')|format_number if stmt.get('Total Debt') else '-' }}</td>
+                        <td class="text-right font-mono">{{ (stmt.get('Cash') or stmt.get('Cash And Cash Equivalents'))|format_number if (stmt.get('Cash') or stmt.get('Cash And Cash Equivalents')) else '-' }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Cash Flow -->
+    {% if financials.cashflow and financials.cashflow|length > 0 %}
+    <div class="card overflow-hidden">
+        <div class="p-4 border-b border-slate-700/50">
+            <h3 class="font-semibold text-slate-200">Cash Flow</h3>
+        </div>
+        <div class="overflow-x-auto">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th class="sticky-col">Period</th>
+                        <th class="text-right">Operating CF</th>
+                        <th class="text-right">Free CF</th>
+                        <th class="text-right">CapEx</th>
+                        <th class="text-right">Dividends</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for stmt in (financials.cashflow[:5] if is_beginner else financials.cashflow) %}
+                    <tr>
+                        <td class="sticky-col font-medium">{{ (stmt.get('Date') or 'Q' ~ loop.index)|string|truncate(10, True, '', 0) }}</td>
+                        <td class="text-right font-mono {{ 'text-up' if stmt.get('Operating Cash Flow', 0) > 0 else '' }}">{{ stmt.get('Operating Cash Flow')|format_number if stmt.get('Operating Cash Flow') else '-' }}</td>
+                        <td class="text-right font-mono {{ 'text-up' if stmt.get('Free Cash Flow', 0) > 0 else '' }}">{{ stmt.get('Free Cash Flow')|format_number if stmt.get('Free Cash Flow') else '-' }}</td>
+                        <td class="text-right font-mono text-down">{{ stmt.get('Capital Expenditure')|format_number if stmt.get('Capital Expenditure') else '-' }}</td>
+                        <td class="text-right font-mono">{{ stmt.get('Cash Dividends Paid')|format_number if stmt.get('Cash Dividends Paid') else '-' }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    {% endif %}
+</section>
+{% endif %}

@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en" class="scroll-smooth">
+<html lang="en" class="dark scroll-smooth">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -13,179 +13,1208 @@
             theme: {
                 extend: {
                     colors: {
-                        up: '#22c55e',
+                        brand: {
+                            50: '#ecfeff',
+                            100: '#cffafe',
+                            200: '#a5f3fc',
+                            300: '#67e8f9',
+                            400: '#22d3ee',
+                            500: '#06b6d4',
+                            600: '#0891b2',
+                            700: '#0e7490',
+                            800: '#155e75',
+                            900: '#164e63',
+                        },
+                        up: '#10b981',
                         down: '#ef4444',
+                        surface: {
+                            DEFAULT: '#0f172a',
+                            card: '#1e293b',
+                            elevated: '#334155',
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'system-ui', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', 'sans-serif'],
+                        mono: ['JetBrains Mono', 'SF Mono', 'Monaco', 'Inconsolata', 'Fira Mono', 'monospace'],
                     }
                 }
             }
         }
 
-        // Initialize dark mode from localStorage
-        if (localStorage.getItem('darkMode') === 'true' ||
-            (!localStorage.getItem('darkMode') && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
-            document.documentElement.classList.add('dark');
-        }
-
-        function toggleDarkMode() {
-            document.documentElement.classList.toggle('dark');
-            localStorage.setItem('darkMode', document.documentElement.classList.contains('dark'));
-            // Update Plotly charts for dark mode
-            updateChartsTheme();
-        }
-
-        function updateChartsTheme() {
-            const isDark = document.documentElement.classList.contains('dark');
-            // Plotly charts adapt automatically due to transparent backgrounds
+        // Dark mode is default, but allow toggle
+        if (localStorage.getItem('darkMode') === 'false') {
+            document.documentElement.classList.remove('dark');
         }
     </script>
 
     <!-- Plotly.js -->
     <script src="https://cdn.plot.ly/plotly-2.27.0.min.js"></script>
 
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+
     <style>
-        /* Sticky table columns for mobile */
-        .sticky-col {
-            position: sticky;
-            left: 0;
-            z-index: 10;
-            background: inherit;
+        /* Base Styles */
+        * {
+            box-sizing: border-box;
         }
 
-        .dark .sticky-col {
-            background: #1f2937;
+        body {
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
         }
 
-        /* Smooth scrolling for iOS */
-        .overflow-x-auto {
-            -webkit-overflow-scrolling: touch;
+        /* Scrollbar Styling */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
         }
 
-        /* Tab styles */
-        .tab-btn {
+        ::-webkit-scrollbar-track {
+            background: #1e293b;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #475569;
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: #64748b;
+        }
+
+        /* Card Styles */
+        .card {
+            background: linear-gradient(145deg, #1e293b 0%, #1e293b 100%);
+            border: 1px solid rgba(71, 85, 105, 0.4);
+            border-radius: 12px;
             transition: all 0.2s ease;
         }
 
-        .tab-btn.active {
-            border-bottom: 2px solid #3b82f6;
-            color: #3b82f6;
+        .card:hover {
+            border-color: rgba(6, 182, 212, 0.3);
+            box-shadow: 0 0 20px rgba(6, 182, 212, 0.05);
         }
 
-        .dark .tab-btn.active {
-            border-bottom-color: #60a5fa;
-            color: #60a5fa;
-        }
-
-        .tab-content {
-            display: none;
-        }
-
-        .tab-content.active {
-            display: block;
-        }
-
-        /* Card hover effect */
+        /* Metric Card Animation */
         .metric-card {
-            transition: transform 0.2s ease, box-shadow 0.2s ease;
+            position: relative;
+            overflow: hidden;
         }
 
-        .metric-card:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1);
+        .metric-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: linear-gradient(90deg, transparent, #06b6d4, transparent);
+            opacity: 0;
+            transition: opacity 0.2s ease;
         }
 
-        /* Print styles */
+        .metric-card:hover::before {
+            opacity: 1;
+        }
+
+        /* Section Divider */
+        .section-divider {
+            height: 1px;
+            background: linear-gradient(90deg, transparent, rgba(71, 85, 105, 0.5), transparent);
+            margin: 2rem 0;
+        }
+
+        /* Table Styles */
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .data-table th {
+            text-align: left;
+            padding: 0.75rem 1rem;
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: #94a3b8;
+            background: rgba(15, 23, 42, 0.5);
+            border-bottom: 1px solid rgba(71, 85, 105, 0.3);
+        }
+
+        .data-table td {
+            padding: 0.875rem 1rem;
+            font-size: 0.875rem;
+            border-bottom: 1px solid rgba(71, 85, 105, 0.2);
+        }
+
+        .data-table tr:hover td {
+            background: rgba(30, 41, 59, 0.5);
+        }
+
+        .data-table .sticky-col {
+            position: sticky;
+            left: 0;
+            background: #1e293b;
+            z-index: 10;
+        }
+
+        .data-table tr:hover .sticky-col {
+            background: rgba(30, 41, 59, 0.8);
+        }
+
+        /* Progress Bar */
+        .progress-bar {
+            height: 6px;
+            background: rgba(71, 85, 105, 0.3);
+            border-radius: 3px;
+            overflow: hidden;
+        }
+
+        .progress-bar-fill {
+            height: 100%;
+            border-radius: 3px;
+            transition: width 0.3s ease;
+        }
+
+        /* Rating Bar */
+        .rating-bar {
+            height: 32px;
+            border-radius: 6px;
+            overflow: hidden;
+            display: flex;
+        }
+
+        .rating-segment {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: white;
+            transition: all 0.2s ease;
+        }
+
+        /* Glow Effects */
+        .glow-up {
+            box-shadow: 0 0 20px rgba(16, 185, 129, 0.15);
+        }
+
+        .glow-down {
+            box-shadow: 0 0 20px rgba(239, 68, 68, 0.15);
+        }
+
+        /* Print Styles */
         @media print {
+            body {
+                background: white !important;
+                color: black !important;
+            }
+
+            .card {
+                background: #f8fafc !important;
+                border: 1px solid #e2e8f0 !important;
+                box-shadow: none !important;
+            }
+
             .no-print {
                 display: none !important;
             }
-            .tab-content {
-                display: block !important;
-                page-break-inside: avoid;
+
+            .section-divider {
+                background: #e2e8f0 !important;
+            }
+
+            .page-break {
+                page-break-before: always;
+            }
+        }
+
+        /* Chart Container */
+        .chart-container {
+            width: 100%;
+            min-height: 300px;
+        }
+
+        /* News Card */
+        .news-card {
+            transition: all 0.2s ease;
+        }
+
+        .news-card:hover {
+            transform: translateX(4px);
+        }
+
+        /* Tooltip */
+        .tooltip {
+            position: relative;
+        }
+
+        .tooltip::after {
+            content: attr(data-tooltip);
+            position: absolute;
+            bottom: 100%;
+            left: 50%;
+            transform: translateX(-50%);
+            padding: 0.5rem 0.75rem;
+            background: #0f172a;
+            color: #e2e8f0;
+            font-size: 0.75rem;
+            border-radius: 6px;
+            white-space: nowrap;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.2s ease;
+            z-index: 50;
+        }
+
+        .tooltip:hover::after {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        /* Badge */
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            padding: 0.25rem 0.625rem;
+            font-size: 0.75rem;
+            font-weight: 500;
+            border-radius: 9999px;
+        }
+
+        /* Animations */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .animate-fade-in {
+            animation: fadeIn 0.3s ease forwards;
+        }
+
+        /* Responsive Container */
+        .container-responsive {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 0 1rem;
+        }
+
+        @media (min-width: 640px) {
+            .container-responsive {
+                padding: 0 1.5rem;
+            }
+        }
+
+        @media (min-width: 1024px) {
+            .container-responsive {
+                padding: 0 2rem;
             }
         }
     </style>
 </head>
-<body class="bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-gray-100 min-h-screen">
+<body class="bg-surface text-slate-100 min-h-screen">
     <!-- Header -->
-    <header class="bg-white dark:bg-gray-800 shadow-sm sticky top-0 z-50 no-print">
-        <div class="max-w-7xl mx-auto px-4 py-4 flex justify-between items-center">
-            <div class="flex items-center space-x-4">
-                <h1 class="text-2xl font-bold">{{ ticker }}</h1>
-                {% if profile and profile.name %}
-                <span class="text-gray-500 dark:text-gray-400 hidden sm:inline">{{ profile.name }}</span>
-                {% endif %}
-            </div>
-            <div class="flex items-center space-x-4">
-                <span class="text-sm text-gray-500 dark:text-gray-400">{{ date }}</span>
-                <button onclick="toggleDarkMode()" class="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700">
-                    <svg class="w-5 h-5 hidden dark:block" fill="currentColor" viewBox="0 0 20 20">
-                        <path d="M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zm4 8a4 4 0 11-8 0 4 4 0 018 0zm-.464 4.95l.707.707a1 1 0 001.414-1.414l-.707-.707a1 1 0 00-1.414 1.414zm2.12-10.607a1 1 0 010 1.414l-.706.707a1 1 0 11-1.414-1.414l.707-.707a1 1 0 011.414 0zM17 11a1 1 0 100-2h-1a1 1 0 100 2h1zm-7 4a1 1 0 011 1v1a1 1 0 11-2 0v-1a1 1 0 011-1zM5.05 6.464A1 1 0 106.465 5.05l-.708-.707a1 1 0 00-1.414 1.414l.707.707zm1.414 8.486l-.707.707a1 1 0 01-1.414-1.414l.707-.707a1 1 0 011.414 1.414zM4 11a1 1 0 100-2H3a1 1 0 000 2h1z"/>
-                    </svg>
-                    <svg class="w-5 h-5 block dark:hidden" fill="currentColor" viewBox="0 0 20 20">
-                        <path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z"/>
-                    </svg>
-                </button>
+    <header class="sticky top-0 z-50 bg-surface/95 backdrop-blur-xl border-b border-slate-800 no-print">
+        <div class="container-responsive">
+            <div class="flex items-center justify-between h-16">
+                <!-- Logo & Ticker -->
+                <div class="flex items-center gap-4">
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 rounded-lg bg-gradient-to-br from-brand-500 to-brand-600 flex items-center justify-center">
+                            <span class="text-white font-bold text-lg">{{ ticker[:2] }}</span>
+                        </div>
+                        <div>
+                            <div class="flex items-center gap-2">
+                                <h1 class="text-xl font-bold tracking-tight">{{ ticker }}</h1>
+                                <span class="badge bg-slate-800 text-slate-400 text-xs">{{ mode|upper }}</span>
+                            </div>
+                            {% if profile and profile.name %}
+                            <p class="text-sm text-slate-400 hidden sm:block">{{ profile.name }}</p>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Actions -->
+                <div class="flex items-center gap-3">
+                    <span class="text-sm text-slate-500 font-mono">{{ date }}</span>
+                    <button onclick="window.print()" class="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-sm font-medium transition-colors">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"></path>
+                        </svg>
+                        Export PDF
+                    </button>
+                </div>
             </div>
         </div>
     </header>
 
     <!-- Main Content -->
-    <main class="max-w-7xl mx-auto px-4 py-6">
-        <!-- Navigation Tabs -->
-        <nav class="mb-6 overflow-x-auto no-print">
-            <div class="flex space-x-1 border-b border-gray-200 dark:border-gray-700 min-w-max">
-                {% for section in sections %}
-                <button onclick="showTab('{{ section }}')"
-                        class="tab-btn px-4 py-2 text-sm font-medium {% if loop.first %}active{% endif %}"
-                        data-tab="{{ section }}">
-                    {{ section|title }}
-                </button>
+    <main class="container-responsive py-6 space-y-6">
+
+        <!-- Company Overview Hero -->
+        {% if profile and profile.description %}
+        <section class="card p-6">
+            <div class="flex flex-col lg:flex-row lg:items-start gap-6">
+                <div class="flex-1">
+                    <div class="flex flex-wrap items-center gap-2 mb-4">
+                        {% if profile.sector %}
+                        <span class="badge bg-brand-500/20 text-brand-400">{{ profile.sector }}</span>
+                        {% endif %}
+                        {% if profile.industry %}
+                        <span class="badge bg-slate-700 text-slate-300">{{ profile.industry }}</span>
+                        {% endif %}
+                        {% if profile.country %}
+                        <span class="badge bg-slate-800 text-slate-400">{{ profile.country }}</span>
+                        {% endif %}
+                        {% if profile.exchange %}
+                        <span class="badge bg-slate-800 text-slate-400">{{ profile.exchange }}</span>
+                        {% endif %}
+                    </div>
+                    <p class="text-slate-300 text-sm leading-relaxed">
+                        {{ profile.description[:600] }}{% if profile.description|length > 600 %}...{% endif %}
+                    </p>
+                    {% if profile.website %}
+                    <a href="{{ profile.website }}" target="_blank" class="inline-flex items-center gap-1.5 mt-4 text-sm text-brand-400 hover:text-brand-300 transition-colors">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path>
+                        </svg>
+                        {{ profile.website }}
+                    </a>
+                    {% endif %}
+                </div>
+                {% if profile.employees %}
+                <div class="flex flex-col gap-2 text-right">
+                    <span class="text-xs text-slate-500 uppercase tracking-wider">Employees</span>
+                    <span class="text-xl font-semibold text-slate-200">{{ profile.employees|format_number }}</span>
+                </div>
+                {% endif %}
+            </div>
+        </section>
+        {% endif %}
+
+        <!-- Key Price Metrics -->
+        {% if price %}
+        <section class="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <!-- Current Price -->
+            <div class="card metric-card p-5 {% if price.get('change_pct', 0) >= 0 %}glow-up{% else %}glow-down{% endif %}">
+                <div class="flex items-start justify-between mb-2">
+                    <span class="text-xs text-slate-500 uppercase tracking-wider">Price</span>
+                    <span class="text-xs text-slate-600 font-mono">{{ ticker }}</span>
+                </div>
+                <div class="flex items-baseline gap-2">
+                    <span class="text-3xl font-bold text-slate-100">${{ price.get('current_price', 'N/A')|round(2) if price.get('current_price') else 'N/A' }}</span>
+                </div>
+                {% if price.get('change_pct') is not none %}
+                <div class="flex items-center gap-2 mt-2">
+                    <span class="text-sm font-semibold {{ 'text-up' if price.get('change_pct', 0) >= 0 else 'text-down' }}">
+                        {{ '%+.2f'|format(price.get('change_pct', 0)) }}%
+                    </span>
+                    {% if price.get('change') is not none %}
+                    <span class="text-xs text-slate-500">
+                        ({{ '%+.2f'|format(price.get('change', 0)) }})
+                    </span>
+                    {% endif %}
+                </div>
+                {% endif %}
+            </div>
+
+            <!-- Volume -->
+            <div class="card metric-card p-5">
+                <div class="flex items-start justify-between mb-2">
+                    <span class="text-xs text-slate-500 uppercase tracking-wider">Volume</span>
+                    {% if price.avg_volume and price.volume %}
+                    {% set vol_ratio = price.volume / price.avg_volume %}
+                    <span class="text-xs {{ 'text-brand-400' if vol_ratio > 1.2 else 'text-slate-500' }}">
+                        {{ '%.1fx'|format(vol_ratio) }} avg
+                    </span>
+                    {% endif %}
+                </div>
+                <span class="text-3xl font-bold text-slate-100">{{ price.volume|format_number if price.volume else 'N/A' }}</span>
+                {% if price.avg_volume %}
+                <div class="mt-2 text-sm text-slate-500">
+                    Avg: {{ price.avg_volume|format_number }}
+                </div>
+                {% endif %}
+            </div>
+
+            <!-- Market Cap -->
+            <div class="card metric-card p-5">
+                <div class="flex items-start justify-between mb-2">
+                    <span class="text-xs text-slate-500 uppercase tracking-wider">Market Cap</span>
+                </div>
+                <span class="text-3xl font-bold text-slate-100">{{ price.market_cap|format_number if price.market_cap else 'N/A' }}</span>
+                {% if metrics.get('pe_ratio') and metrics.pe_ratio.get('value') %}
+                <div class="mt-2 text-sm text-slate-500">
+                    P/E: {{ metrics.pe_ratio.value|round(1) }}
+                </div>
+                {% endif %}
+            </div>
+
+            <!-- 52 Week Range -->
+            <div class="card metric-card p-5">
+                <div class="flex items-start justify-between mb-2">
+                    <span class="text-xs text-slate-500 uppercase tracking-wider">52W Range</span>
+                </div>
+                {% if price.high_52w and price.low_52w %}
+                <div class="space-y-2">
+                    <div class="flex justify-between text-sm">
+                        <span class="text-slate-500">${{ price.low_52w|round(2) }}</span>
+                        <span class="text-slate-500">${{ price.high_52w|round(2) }}</span>
+                    </div>
+                    {% set range = price.high_52w - price.low_52w %}
+                    {% if range > 0 and price.current_price %}
+                    {% set position = ((price.current_price - price.low_52w) / range * 100)|round %}
+                    <div class="progress-bar">
+                        <div class="progress-bar-fill bg-gradient-to-r from-down via-yellow-500 to-up" style="width: {{ position }}%"></div>
+                    </div>
+                    <div class="relative h-0">
+                        <div class="absolute w-2 h-2 bg-brand-400 rounded-full -top-5 transform -translate-x-1/2" style="left: {{ position }}%"></div>
+                    </div>
+                    {% endif %}
+                </div>
+                {% else %}
+                <span class="text-xl text-slate-500">N/A</span>
+                {% endif %}
+            </div>
+        </section>
+        {% endif %}
+
+        <!-- Price Chart -->
+        {% if charts.price %}
+        <section class="card p-6">
+            <div class="flex items-center justify-between mb-4">
+                <h2 class="text-lg font-semibold text-slate-100">Price History</h2>
+                <div class="flex items-center gap-4 text-xs text-slate-500">
+                    {% if price.open %}
+                    <span>O: <span class="text-slate-300">${{ price.open|round(2) }}</span></span>
+                    {% endif %}
+                    {% if price.high %}
+                    <span>H: <span class="text-up">${{ price.high|round(2) }}</span></span>
+                    {% endif %}
+                    {% if price.low %}
+                    <span>L: <span class="text-down">${{ price.low|round(2) }}</span></span>
+                    {% endif %}
+                </div>
+            </div>
+            <div id="price-chart" class="chart-container" style="height: 450px;"></div>
+        </section>
+        {% endif %}
+
+        <!-- Financial Health Section -->
+        <section class="space-y-4">
+            <h2 class="text-lg font-semibold text-slate-100 flex items-center gap-2">
+                <svg class="w-5 h-5 text-brand-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
+                </svg>
+                Financial Health
+            </h2>
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                {% for metric_key in ['roe', 'roa', 'net_margin', 'debt_equity'] %}
+                {% set metric = metrics.get(metric_key, {}) %}
+                {% set label = metric.get('label', {}) %}
+                <div class="card metric-card p-4">
+                    <div class="flex items-center justify-between mb-1">
+                        <span class="text-xs text-slate-500 uppercase tracking-wider">{{ label.get('display', metric_key.replace('_', ' ').upper()) }}</span>
+                        {% if is_beginner and label.get('tooltip') %}
+                        <span class="text-slate-600 cursor-help tooltip" data-tooltip="{{ label.tooltip }}">?</span>
+                        {% endif %}
+                    </div>
+                    <span class="text-2xl font-bold text-slate-100">
+                        {% if metric and metric.get('value') is not none %}
+                        {% if metric_key in ['roe', 'roa', 'net_margin'] %}
+                        {{ metric.get('value')|round(1) }}%
+                        {% else %}
+                        {{ metric.get('value')|round(2) }}x
+                        {% endif %}
+                        {% else %}
+                        <span class="text-slate-600">N/A</span>
+                        {% endif %}
+                    </span>
+                </div>
                 {% endfor %}
             </div>
-        </nav>
+        </section>
 
-        <!-- Tab Contents -->
-        <div id="tab-contents">
-            {% for section in sections %}
-            <div id="tab-{{ section }}" class="tab-content {% if loop.first %}active{% endif %}">
-                {% include 'tabs/' ~ section ~ '.html.jinja2' %}
+        <!-- Valuation Metrics -->
+        <section class="space-y-4">
+            <h2 class="text-lg font-semibold text-slate-100 flex items-center gap-2">
+                <svg class="w-5 h-5 text-brand-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 12l3-3 3 3 4-4M8 21l4-4 4 4M3 4h18M4 4h16v12a1 1 0 01-1 1H5a1 1 0 01-1-1V4z"></path>
+                </svg>
+                Valuation Metrics
+            </h2>
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                {% for metric_key in ['pe_ratio', 'pb_ratio', 'ps_ratio', 'pcf_ratio'] %}
+                {% set metric = metrics.get(metric_key, {}) %}
+                {% set label = metric.get('label', {}) %}
+                <div class="card metric-card p-4">
+                    <div class="flex items-center justify-between mb-1">
+                        <span class="text-xs text-slate-500 uppercase tracking-wider">{{ label.get('display', metric_key.replace('_', '/').upper()) }}</span>
+                        {% if is_beginner and label.get('tooltip') %}
+                        <span class="text-slate-600 cursor-help tooltip" data-tooltip="{{ label.tooltip }}">?</span>
+                        {% endif %}
+                    </div>
+                    <span class="text-2xl font-bold text-slate-100">
+                        {% if metric and metric.get('value') is not none %}
+                        {{ metric.get('value')|round(2) }}
+                        {% else %}
+                        <span class="text-slate-600">N/A</span>
+                        {% endif %}
+                    </span>
+                </div>
+                {% endfor %}
             </div>
-            {% endfor %}
-        </div>
+
+            <!-- Advanced Valuation -->
+            {% if is_advanced %}
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                {% if metrics.peg_ratio is defined %}
+                <div class="card metric-card p-4">
+                    <span class="text-xs text-slate-500 uppercase tracking-wider">PEG Ratio</span>
+                    <span class="text-2xl font-bold text-slate-100 block mt-1">
+                        {{ metrics.peg_ratio.value|round(2) if metrics.peg_ratio.value else 'N/A' }}
+                    </span>
+                </div>
+                {% endif %}
+                {% if metrics.ev_ebitda is defined %}
+                <div class="card metric-card p-4">
+                    <span class="text-xs text-slate-500 uppercase tracking-wider">EV/EBITDA</span>
+                    <span class="text-2xl font-bold text-slate-100 block mt-1">
+                        {{ metrics.ev_ebitda.value|round(2) if metrics.ev_ebitda.value else 'N/A' }}
+                    </span>
+                </div>
+                {% endif %}
+            </div>
+            {% endif %}
+        </section>
+
+        <!-- Growth Metrics -->
+        {% if metrics.get('revenue_yoy') or metrics.get('net_income_yoy') %}
+        <section class="card p-6">
+            <h2 class="text-lg font-semibold text-slate-100 mb-4">Year-over-Year Growth</h2>
+            <div class="grid grid-cols-2 gap-4">
+                {% if metrics.get('revenue_yoy') and metrics.revenue_yoy.get('value') is not none %}
+                <div class="p-4 bg-slate-800/50 rounded-lg border border-slate-700/50">
+                    <span class="text-xs text-slate-500 uppercase tracking-wider">Revenue Growth</span>
+                    <div class="flex items-center gap-2 mt-1">
+                        <span class="text-2xl font-bold {{ 'text-up' if metrics.revenue_yoy.value >= 0 else 'text-down' }}">
+                            {{ '%+.1f'|format(metrics.revenue_yoy.value) }}%
+                        </span>
+                        {% if metrics.revenue_yoy.value >= 0 %}
+                        <svg class="w-5 h-5 text-up" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"></path>
+                        </svg>
+                        {% else %}
+                        <svg class="w-5 h-5 text-down" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 17h8m0 0V9m0 8l-8-8-4 4-6-6"></path>
+                        </svg>
+                        {% endif %}
+                    </div>
+                </div>
+                {% endif %}
+                {% if metrics.get('net_income_yoy') and metrics.net_income_yoy.get('value') is not none %}
+                <div class="p-4 bg-slate-800/50 rounded-lg border border-slate-700/50">
+                    <span class="text-xs text-slate-500 uppercase tracking-wider">Net Income Growth</span>
+                    <div class="flex items-center gap-2 mt-1">
+                        <span class="text-2xl font-bold {{ 'text-up' if metrics.net_income_yoy.value >= 0 else 'text-down' }}">
+                            {{ '%+.1f'|format(metrics.net_income_yoy.value) }}%
+                        </span>
+                        {% if metrics.net_income_yoy.value >= 0 %}
+                        <svg class="w-5 h-5 text-up" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"></path>
+                        </svg>
+                        {% else %}
+                        <svg class="w-5 h-5 text-down" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 17h8m0 0V9m0 8l-8-8-4 4-6-6"></path>
+                        </svg>
+                        {% endif %}
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+        </section>
+        {% endif %}
+
+        <!-- Revenue Chart -->
+        {% if charts.revenue %}
+        <section class="card p-6">
+            <h2 class="text-lg font-semibold text-slate-100 mb-4">Revenue & Net Income Trend</h2>
+            <div id="revenue-chart" class="chart-container" style="height: 300px;"></div>
+        </section>
+        {% endif %}
+
+        <!-- Financial Statements -->
+        {% if financials %}
+        <section class="space-y-4">
+            <h2 class="text-lg font-semibold text-slate-100 flex items-center gap-2">
+                <svg class="w-5 h-5 text-brand-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                </svg>
+                Financial Statements
+            </h2>
+
+            <!-- Income Statement -->
+            {% if financials.income_statement and financials.income_statement|length > 0 %}
+            <div class="card overflow-hidden">
+                <div class="p-4 border-b border-slate-700/50">
+                    <h3 class="font-semibold text-slate-200">Income Statement</h3>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th class="sticky-col">Period</th>
+                                <th class="text-right">Revenue</th>
+                                <th class="text-right">Gross Profit</th>
+                                <th class="text-right">Op Income</th>
+                                <th class="text-right">Net Income</th>
+                                <th class="text-right">EPS</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for stmt in (financials.income_statement[:5] if is_beginner else financials.income_statement) %}
+                            <tr>
+                                <td class="sticky-col font-medium">{{ (stmt.get('Date') or 'Q' ~ loop.index)|string|truncate(10, True, '', 0) }}</td>
+                                <td class="text-right font-mono">{{ stmt.get('Total Revenue')|format_number if stmt.get('Total Revenue') else '-' }}</td>
+                                <td class="text-right font-mono">{{ stmt.get('Gross Profit')|format_number if stmt.get('Gross Profit') else '-' }}</td>
+                                <td class="text-right font-mono">{{ stmt.get('Operating Income')|format_number if stmt.get('Operating Income') else '-' }}</td>
+                                <td class="text-right font-mono {{ 'text-up' if (stmt.get('Net Income') or 0) > 0 else 'text-down' }}">{{ stmt.get('Net Income')|format_number if stmt.get('Net Income') else '-' }}</td>
+                                <td class="text-right font-mono">${{ stmt.get('Basic EPS')|round(2) if stmt.get('Basic EPS') else '-' }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Balance Sheet -->
+            {% if financials.balance_sheet and financials.balance_sheet|length > 0 %}
+            <div class="card overflow-hidden">
+                <div class="p-4 border-b border-slate-700/50">
+                    <h3 class="font-semibold text-slate-200">Balance Sheet</h3>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th class="sticky-col">Period</th>
+                                <th class="text-right">Assets</th>
+                                <th class="text-right">Liabilities</th>
+                                <th class="text-right">Equity</th>
+                                <th class="text-right">Debt</th>
+                                <th class="text-right">Cash</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for stmt in (financials.balance_sheet[:5] if is_beginner else financials.balance_sheet) %}
+                            <tr>
+                                <td class="sticky-col font-medium">{{ (stmt.get('Date') or 'Q' ~ loop.index)|string|truncate(10, True, '', 0) }}</td>
+                                <td class="text-right font-mono">{{ stmt.get('Total Assets')|format_number if stmt.get('Total Assets') else '-' }}</td>
+                                <td class="text-right font-mono">{{ (stmt.get('Total Liabilities') or stmt.get('Total Liab') or stmt.get('Total Liabilities Net Minority Interest'))|format_number if (stmt.get('Total Liabilities') or stmt.get('Total Liab') or stmt.get('Total Liabilities Net Minority Interest')) else '-' }}</td>
+                                <td class="text-right font-mono">{{ (stmt.get('Total Stockholder Equity') or stmt.get('Stockholders Equity'))|format_number if (stmt.get('Total Stockholder Equity') or stmt.get('Stockholders Equity')) else '-' }}</td>
+                                <td class="text-right font-mono">{{ stmt.get('Total Debt')|format_number if stmt.get('Total Debt') else '-' }}</td>
+                                <td class="text-right font-mono">{{ (stmt.get('Cash') or stmt.get('Cash And Cash Equivalents'))|format_number if (stmt.get('Cash') or stmt.get('Cash And Cash Equivalents')) else '-' }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Cash Flow -->
+            {% if financials.cashflow and financials.cashflow|length > 0 %}
+            <div class="card overflow-hidden">
+                <div class="p-4 border-b border-slate-700/50">
+                    <h3 class="font-semibold text-slate-200">Cash Flow</h3>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th class="sticky-col">Period</th>
+                                <th class="text-right">Operating CF</th>
+                                <th class="text-right">Free CF</th>
+                                <th class="text-right">CapEx</th>
+                                <th class="text-right">Dividends</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for stmt in (financials.cashflow[:5] if is_beginner else financials.cashflow) %}
+                            <tr>
+                                <td class="sticky-col font-medium">{{ (stmt.get('Date') or 'Q' ~ loop.index)|string|truncate(10, True, '', 0) }}</td>
+                                <td class="text-right font-mono {{ 'text-up' if (stmt.get('Operating Cash Flow') or 0) > 0 else '' }}">{{ stmt.get('Operating Cash Flow')|format_number if stmt.get('Operating Cash Flow') else '-' }}</td>
+                                <td class="text-right font-mono {{ 'text-up' if (stmt.get('Free Cash Flow') or 0) > 0 else '' }}">{{ stmt.get('Free Cash Flow')|format_number if stmt.get('Free Cash Flow') else '-' }}</td>
+                                <td class="text-right font-mono text-down">{{ stmt.get('Capital Expenditure')|format_number if stmt.get('Capital Expenditure') else '-' }}</td>
+                                <td class="text-right font-mono">{{ stmt.get('Cash Dividends Paid')|format_number if stmt.get('Cash Dividends Paid') else '-' }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            {% endif %}
+        </section>
+        {% endif %}
+
+        <!-- Technical Analysis (Advanced Only) -->
+        {% if is_advanced and charts.technical %}
+        <section class="card p-6">
+            <h2 class="text-lg font-semibold text-slate-100 mb-4 flex items-center gap-2">
+                <svg class="w-5 h-5 text-brand-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 12l3-3 3 3 4-4M8 21l4-4 4 4M3 4h18M4 4h16v12a1 1 0 01-1 1H5a1 1 0 01-1-1V4z"></path>
+                </svg>
+                Technical Analysis
+            </h2>
+            <div id="technical-chart" class="chart-container" style="height: 500px;"></div>
+        </section>
+        {% endif %}
+
+        <!-- Dividend Section -->
+        {% if dividends %}
+        <section class="space-y-4">
+            <h2 class="text-lg font-semibold text-slate-100 flex items-center gap-2">
+                <svg class="w-5 h-5 text-brand-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                </svg>
+                Dividend Information
+            </h2>
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <div class="card metric-card p-4">
+                    <div class="flex items-center justify-between mb-1">
+                        <span class="text-xs text-slate-500 uppercase tracking-wider">Div Yield</span>
+                        {% if is_beginner %}
+                        <span class="text-slate-600 cursor-help tooltip" data-tooltip="Annual dividends as percentage of stock price">?</span>
+                        {% endif %}
+                    </div>
+                    <span class="text-2xl font-bold text-slate-100">
+                        {% if metrics.get('dividend_yield') and metrics.dividend_yield.get('value') is not none %}
+                        {{ metrics.dividend_yield.value|round(2) }}%
+                        {% else %}
+                        <span class="text-slate-600">N/A</span>
+                        {% endif %}
+                    </span>
+                </div>
+
+                <div class="card metric-card p-4">
+                    <div class="flex items-center justify-between mb-1">
+                        <span class="text-xs text-slate-500 uppercase tracking-wider">TTM Dividend</span>
+                        {% if is_beginner %}
+                        <span class="text-slate-600 cursor-help tooltip" data-tooltip="Total dividends paid in last 12 months">?</span>
+                        {% endif %}
+                    </div>
+                    <span class="text-2xl font-bold text-slate-100">
+                        {% if dividends.ttm_dividend %}
+                        ${{ dividends.ttm_dividend|round(2) }}
+                        {% else %}
+                        <span class="text-slate-600">N/A</span>
+                        {% endif %}
+                    </span>
+                </div>
+
+                <div class="card metric-card p-4">
+                    <span class="text-xs text-slate-500 uppercase tracking-wider">Total Payments</span>
+                    <span class="text-2xl font-bold text-slate-100 block mt-1">{{ dividends.total_dividends or 0 }}</span>
+                </div>
+
+                <div class="card metric-card p-4">
+                    <div class="flex items-center justify-between mb-1">
+                        <span class="text-xs text-slate-500 uppercase tracking-wider">5Y CAGR</span>
+                        {% if is_beginner %}
+                        <span class="text-slate-600 cursor-help tooltip" data-tooltip="Compound annual growth rate of dividends over 5 years">?</span>
+                        {% endif %}
+                    </div>
+                    <span class="text-2xl font-bold text-slate-100">
+                        {% if metrics.get('dividend_cagr_5y') and metrics.dividend_cagr_5y.get('value') is not none %}
+                        <span class="{{ 'text-up' if metrics.dividend_cagr_5y.value >= 0 else 'text-down' }}">
+                            {{ '%+.1f'|format(metrics.dividend_cagr_5y.value) }}%
+                        </span>
+                        {% else %}
+                        <span class="text-slate-600">N/A</span>
+                        {% endif %}
+                    </span>
+                </div>
+            </div>
+
+            {% if charts.dividend %}
+            <div class="card p-6">
+                <h3 class="font-semibold text-slate-200 mb-4">Annual Dividend History</h3>
+                <div id="dividend-chart" class="chart-container" style="height: 250px;"></div>
+            </div>
+            {% endif %}
+
+            {% if dividends.history %}
+            <div class="card overflow-hidden">
+                <div class="p-4 border-b border-slate-700/50">
+                    <h3 class="font-semibold text-slate-200">Recent Dividend Payments</h3>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th class="text-right">Amount</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for div in (dividends.history[:10] if is_beginner else dividends.history) %}
+                            <tr>
+                                <td class="font-medium">{{ div.date }}</td>
+                                <td class="text-right font-mono text-brand-400">${{ div.amount|round(4) }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            {% endif %}
+        </section>
+        {% endif %}
+
+        <!-- Analyst Ratings -->
+        {% if analyst %}
+        <section class="space-y-4">
+            <h2 class="text-lg font-semibold text-slate-100 flex items-center gap-2">
+                <svg class="w-5 h-5 text-brand-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path>
+                </svg>
+                Analyst Coverage
+            </h2>
+
+            {% if analyst.grades %}
+            <div class="card p-6">
+                <h3 class="font-semibold text-slate-200 mb-4">Analyst Consensus</h3>
+
+                <!-- Rating Bar -->
+                <div class="mb-4">
+                    {% set total = analyst.grades.buy + analyst.grades.hold + analyst.grades.sell %}
+                    {% if total > 0 %}
+                    {% set buy_pct = (analyst.grades.buy / total * 100)|round %}
+                    {% set hold_pct = (analyst.grades.hold / total * 100)|round %}
+                    {% set sell_pct = (analyst.grades.sell / total * 100)|round %}
+
+                    <div class="rating-bar">
+                        {% if buy_pct > 0 %}
+                        <div class="rating-segment bg-up" style="width: {{ buy_pct }}%">
+                            {% if buy_pct > 15 %}{{ analyst.grades.buy }}{% endif %}
+                        </div>
+                        {% endif %}
+                        {% if hold_pct > 0 %}
+                        <div class="rating-segment bg-yellow-500" style="width: {{ hold_pct }}%">
+                            {% if hold_pct > 15 %}{{ analyst.grades.hold }}{% endif %}
+                        </div>
+                        {% endif %}
+                        {% if sell_pct > 0 %}
+                        <div class="rating-segment bg-down" style="width: {{ sell_pct }}%">
+                            {% if sell_pct > 15 %}{{ analyst.grades.sell }}{% endif %}
+                        </div>
+                        {% endif %}
+                    </div>
+
+                    <div class="flex justify-between mt-2 text-xs text-slate-500">
+                        <span class="flex items-center gap-1.5">
+                            <span class="w-2.5 h-2.5 rounded-full bg-up"></span>
+                            Buy ({{ analyst.grades.buy }})
+                        </span>
+                        <span class="flex items-center gap-1.5">
+                            <span class="w-2.5 h-2.5 rounded-full bg-yellow-500"></span>
+                            Hold ({{ analyst.grades.hold }})
+                        </span>
+                        <span class="flex items-center gap-1.5">
+                            <span class="w-2.5 h-2.5 rounded-full bg-down"></span>
+                            Sell ({{ analyst.grades.sell }})
+                        </span>
+                    </div>
+                    {% endif %}
+                </div>
+
+                <!-- Price Targets -->
+                {% if analyst.price_target %}
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+                    {% if analyst.price_target.mean %}
+                    <div class="p-3 bg-slate-800/50 rounded-lg border border-slate-700/50 text-center">
+                        <span class="text-xs text-slate-500 block mb-1">Mean Target</span>
+                        <span class="text-xl font-bold text-slate-100">${{ analyst.price_target.mean|round(2) }}</span>
+                    </div>
+                    {% endif %}
+                    {% if analyst.price_target.median %}
+                    <div class="p-3 bg-slate-800/50 rounded-lg border border-slate-700/50 text-center">
+                        <span class="text-xs text-slate-500 block mb-1">Median Target</span>
+                        <span class="text-xl font-bold text-slate-100">${{ analyst.price_target.median|round(2) }}</span>
+                    </div>
+                    {% endif %}
+                    {% if analyst.price_target.high %}
+                    <div class="p-3 bg-slate-800/50 rounded-lg border border-slate-700/50 text-center">
+                        <span class="text-xs text-slate-500 block mb-1">High Target</span>
+                        <span class="text-xl font-bold text-up">${{ analyst.price_target.high|round(2) }}</span>
+                    </div>
+                    {% endif %}
+                    {% if analyst.price_target.low %}
+                    <div class="p-3 bg-slate-800/50 rounded-lg border border-slate-700/50 text-center">
+                        <span class="text-xs text-slate-500 block mb-1">Low Target</span>
+                        <span class="text-xl font-bold text-down">${{ analyst.price_target.low|round(2) }}</span>
+                    </div>
+                    {% endif %}
+                </div>
+
+                {% if price and price.current_price and analyst.price_target.mean %}
+                {% set upside = ((analyst.price_target.mean - price.current_price) / price.current_price * 100)|round(1) %}
+                <div class="mt-4 p-3 bg-slate-800/30 rounded-lg border border-slate-700/30">
+                    <span class="text-sm text-slate-400">Potential upside: </span>
+                    <span class="text-lg font-semibold {{ 'text-up' if upside >= 0 else 'text-down' }}">
+                        {{ '%+.1f'|format(upside) }}%
+                    </span>
+                </div>
+                {% endif %}
+                {% endif %}
+            </div>
+            {% endif %}
+
+            {% if analyst.history and analyst.history|length > 0 %}
+            <div class="card overflow-hidden">
+                <div class="p-4 border-b border-slate-700/50">
+                    <h3 class="font-semibold text-slate-200">Recommendation History</h3>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th class="sticky-col">Period</th>
+                                <th class="text-right">Strong Buy</th>
+                                <th class="text-right">Buy</th>
+                                <th class="text-right">Hold</th>
+                                <th class="text-right">Sell</th>
+                                <th class="text-right">Strong Sell</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for rec in analyst.history[:10] %}
+                            <tr>
+                                <td class="sticky-col font-medium">{{ (rec.get('index') or rec.get('Date') or rec.get('period'))|string|truncate(10, True, '', 0) }}</td>
+                                <td class="text-right font-mono text-up">{{ rec.get('strongBuy', '-') }}</td>
+                                <td class="text-right font-mono text-up">{{ rec.get('buy', '-') }}</td>
+                                <td class="text-right font-mono">{{ rec.get('hold', '-') }}</td>
+                                <td class="text-right font-mono text-down">{{ rec.get('sell', '-') }}</td>
+                                <td class="text-right font-mono text-down">{{ rec.get('strongSell', '-') }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            {% endif %}
+        </section>
+        {% endif %}
+
+        <!-- Institutional Ownership -->
+        {% if ownership and ownership.holders %}
+        <section class="space-y-4">
+            <h2 class="text-lg font-semibold text-slate-100 flex items-center gap-2">
+                <svg class="w-5 h-5 text-brand-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path>
+                </svg>
+                Institutional Ownership
+            </h2>
+
+            <div class="grid grid-cols-2 gap-4">
+                <div class="card metric-card p-4">
+                    <span class="text-xs text-slate-500 uppercase tracking-wider">Institutions</span>
+                    <span class="text-2xl font-bold text-slate-100 block mt-1">{{ ownership.total_institutions or ownership.holders|length }}</span>
+                </div>
+                <div class="card metric-card p-4">
+                    <span class="text-xs text-slate-500 uppercase tracking-wider">Top Holder %</span>
+                    {% set top_holder = ownership.holders[0] if ownership.holders else {} %}
+                    <span class="text-2xl font-bold text-slate-100 block mt-1">
+                        {% set pct = top_holder.get('% Out') or top_holder.get('pctHeld') %}
+                        {% if pct %}
+                        {{ (pct * 100 if pct < 1 else pct)|round(2) }}%
+                        {% else %}
+                        <span class="text-slate-600">N/A</span>
+                        {% endif %}
+                    </span>
+                </div>
+            </div>
+
+            {% if charts.ownership %}
+            <div class="card p-6 overflow-hidden">
+                <h3 class="font-semibold text-slate-200 mb-4">Top Institutional Holders</h3>
+                <div id="ownership-chart" class="chart-container" style="height: 400px; max-width: 100%;"></div>
+            </div>
+            {% endif %}
+
+            <div class="card overflow-hidden">
+                <div class="p-4 border-b border-slate-700/50">
+                    <h3 class="font-semibold text-slate-200">Institutional Holdings</h3>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th class="sticky-col">Holder</th>
+                                <th class="text-right">Shares</th>
+                                <th class="text-right">% Out</th>
+                                <th class="text-right">Value</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for holder in (ownership.holders[:10] if is_beginner else ownership.holders) %}
+                            <tr>
+                                <td class="sticky-col font-medium">{{ (holder.get('Holder') or holder.get('holder', 'Unknown'))[:40] }}</td>
+                                <td class="text-right font-mono">
+                                    {% set shares = holder.get('Shares') or holder.get('shares') %}
+                                    {{ shares|format_number_plain if shares else '-' }}
+                                </td>
+                                <td class="text-right font-mono">
+                                    {% set pct = holder.get('% Out') or holder.get('pctOut') or holder.get('pctHeld') %}
+                                    {% if pct %}
+                                    {{ (pct * 100 if pct < 1 else pct)|round(2) }}%
+                                    {% else %}
+                                    -
+                                    {% endif %}
+                                </td>
+                                <td class="text-right font-mono">
+                                    {% set value = holder.get('Value') or holder.get('value') %}
+                                    {{ value|format_number if value else '-' }}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+        {% endif %}
+
+        <!-- Performance Chart -->
+        {% if charts.performance %}
+        <section class="card p-6">
+            <h2 class="text-lg font-semibold text-slate-100 mb-4">Performance Comparison</h2>
+            <div id="performance-chart" class="chart-container" style="height: 300px;"></div>
+        </section>
+        {% endif %}
+
+        <!-- News Section -->
+        {% if news and news|length > 0 %}
+        <section class="space-y-4">
+            <h2 class="text-lg font-semibold text-slate-100 flex items-center gap-2">
+                <svg class="w-5 h-5 text-brand-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h10a2 2 0 012 2v1m2 13a2 2 0 01-2-2V7m2 13a2 2 0 002-2V9a2 2 0 00-2-2h-2m-4-3H9M7 16h6M7 8h6v4H7V8z"></path>
+                </svg>
+                Recent News
+            </h2>
+
+            <div class="space-y-3">
+                {% for article in (news[:8] if is_beginner else news) %}
+                {% if article.get('title') %}
+                <div class="card news-card p-4">
+                    <div class="flex flex-col gap-2">
+                        <div class="flex items-center justify-between">
+                            <span class="text-xs text-brand-400 font-medium">
+                                {{ article.get('publisher') or article.get('source') or 'Unknown' }}
+                            </span>
+                            {% if article.get('published') %}
+                            <span class="text-xs text-slate-500">{{ article.published|format_timestamp }}</span>
+                            {% endif %}
+                        </div>
+
+                        {% if article.get('link') and article.link != 'None' and article.link %}
+                        <a href="{{ article.link }}" target="_blank" rel="noopener noreferrer"
+                           class="text-slate-200 font-medium hover:text-brand-400 transition-colors">
+                            {{ article.get('title', 'No title') }}
+                        </a>
+                        {% else %}
+                        <span class="text-slate-200 font-medium">{{ article.get('title', 'No title') }}</span>
+                        {% endif %}
+
+                        {% if article.get('summary') and is_beginner %}
+                        <p class="text-sm text-slate-400 line-clamp-2">
+                            {{ article.summary[:200] }}{% if article.summary|length > 200 %}...{% endif %}
+                        </p>
+                        {% endif %}
+                    </div>
+                </div>
+                {% endif %}
+                {% endfor %}
+            </div>
+
+            {% if news|length > 8 and is_beginner %}
+            <p class="text-center text-sm text-slate-500">
+                Showing 8 of {{ news|length }} articles. Switch to Advanced mode for all articles.
+            </p>
+            {% endif %}
+        </section>
+        {% endif %}
+
     </main>
 
     <!-- Footer -->
-    <footer class="bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 mt-12 py-6 no-print">
-        <div class="max-w-7xl mx-auto px-4 text-center text-sm text-gray-500 dark:text-gray-400">
-            <p>Generated on {{ date }} | Data sources: yfinance{% if mode == 'advanced' %}, Twelve Data, Finnhub{% endif %}</p>
-            <p class="mt-1">This report is for informational purposes only. Not financial advice.</p>
+    <footer class="border-t border-slate-800 mt-12 py-6 no-print">
+        <div class="container-responsive">
+            <div class="flex flex-col md:flex-row items-center justify-between gap-4 text-sm text-slate-500">
+                <div class="flex items-center gap-4">
+                    <div class="flex items-center gap-2">
+                        <div class="w-6 h-6 rounded bg-gradient-to-br from-brand-500 to-brand-600 flex items-center justify-center">
+                            <span class="text-white text-xs font-bold">{{ ticker[:1] }}</span>
+                        </div>
+                        <span class="font-medium text-slate-400">Financial Report</span>
+                    </div>
+                    <span class="text-slate-700">|</span>
+                    <span>{{ date }}</span>
+                </div>
+                <div class="text-center md:text-right">
+                    <p>Data sources: yfinance{% if mode == 'advanced' %}, Twelve Data, Finnhub{% endif %}</p>
+                    <p class="text-xs text-slate-600 mt-1">This report is for informational purposes only. Not financial advice.</p>
+                </div>
+            </div>
         </div>
     </footer>
 
     <!-- JavaScript -->
     <script>
-        // Tab switching
-        function showTab(tabName) {
-            // Hide all tabs
-            document.querySelectorAll('.tab-content').forEach(el => {
-                el.classList.remove('active');
-            });
-            document.querySelectorAll('.tab-btn').forEach(el => {
-                el.classList.remove('active');
-            });
+        // Render Plotly charts with dark theme
+        const plotlyConfig = {
+            responsive: true,
+            displayModeBar: false,
+        };
 
-            // Show selected tab
-            document.getElementById('tab-' + tabName).classList.add('active');
-            document.querySelector(`[data-tab="${tabName}"]`).classList.add('active');
-        }
+        const plotlyLayout = {
+            paper_bgcolor: 'rgba(0,0,0,0)',
+            plot_bgcolor: 'rgba(0,0,0,0)',
+            font: {
+                family: 'Inter, system-ui, sans-serif',
+                color: '#94a3b8'
+            },
+            xaxis: {
+                gridcolor: 'rgba(71, 85, 105, 0.3)',
+                zerolinecolor: 'rgba(71, 85, 105, 0.5)',
+                linecolor: 'rgba(71, 85, 105, 0.5)'
+            },
+            yaxis: {
+                gridcolor: 'rgba(71, 85, 105, 0.3)',
+                zerolinecolor: 'rgba(71, 85, 105, 0.5)',
+                linecolor: 'rgba(71, 85, 105, 0.5)'
+            },
+            margin: { l: 60, r: 20, t: 20, b: 40 },
+            hoverlabel: {
+                bgcolor: '#1e293b',
+                bordercolor: '#06b6d4',
+                font: { color: '#e2e8f0' }
+            }
+        };
 
-        // Render Plotly charts
         document.addEventListener('DOMContentLoaded', function() {
             {% if charts.price %}
             try {
                 const priceChartDiv = document.getElementById('price-chart');
                 if (priceChartDiv) {
-                    Plotly.newPlot(priceChartDiv, {{ charts.price.json|safe }}, {}, {responsive: true});
+                    Plotly.newPlot(priceChartDiv, {{ charts.price.json|safe }}, plotlyLayout, plotlyConfig);
                 }
             } catch(e) { console.error('Price chart error:', e); }
             {% endif %}
@@ -194,7 +1223,7 @@
             try {
                 const techChartDiv = document.getElementById('technical-chart');
                 if (techChartDiv) {
-                    Plotly.newPlot(techChartDiv, {{ charts.technical.json|safe }}, {}, {responsive: true});
+                    Plotly.newPlot(techChartDiv, {{ charts.technical.json|safe }}, plotlyLayout, plotlyConfig);
                 }
             } catch(e) { console.error('Technical chart error:', e); }
             {% endif %}
@@ -203,7 +1232,7 @@
             try {
                 const revenueChartDiv = document.getElementById('revenue-chart');
                 if (revenueChartDiv) {
-                    Plotly.newPlot(revenueChartDiv, {{ charts.revenue.json|safe }}, {}, {responsive: true});
+                    Plotly.newPlot(revenueChartDiv, {{ charts.revenue.json|safe }}, plotlyLayout, plotlyConfig);
                 }
             } catch(e) { console.error('Revenue chart error:', e); }
             {% endif %}
@@ -212,7 +1241,7 @@
             try {
                 const dividendChartDiv = document.getElementById('dividend-chart');
                 if (dividendChartDiv) {
-                    Plotly.newPlot(dividendChartDiv, {{ charts.dividend.json|safe }}, {}, {responsive: true});
+                    Plotly.newPlot(dividendChartDiv, {{ charts.dividend.json|safe }}, plotlyLayout, plotlyConfig);
                 }
             } catch(e) { console.error('Dividend chart error:', e); }
             {% endif %}
@@ -221,7 +1250,7 @@
             try {
                 const ownershipChartDiv = document.getElementById('ownership-chart');
                 if (ownershipChartDiv) {
-                    Plotly.newPlot(ownershipChartDiv, {{ charts.ownership.json|safe }}, {}, {responsive: true});
+                    Plotly.newPlot(ownershipChartDiv, {{ charts.ownership.json|safe }}, plotlyLayout, plotlyConfig);
                 }
             } catch(e) { console.error('Ownership chart error:', e); }
             {% endif %}
@@ -230,10 +1259,21 @@
             try {
                 const perfChartDiv = document.getElementById('performance-chart');
                 if (perfChartDiv) {
-                    Plotly.newPlot(perfChartDiv, {{ charts.performance.json|safe }}, {}, {responsive: true});
+                    Plotly.newPlot(perfChartDiv, {{ charts.performance.json|safe }}, plotlyLayout, plotlyConfig);
                 }
             } catch(e) { console.error('Performance chart error:', e); }
             {% endif %}
+        });
+
+        // Handle window resize for responsive charts
+        window.addEventListener('resize', function() {
+            const charts = ['price-chart', 'technical-chart', 'revenue-chart', 'dividend-chart', 'ownership-chart', 'performance-chart'];
+            charts.forEach(chartId => {
+                const chartDiv = document.getElementById(chartId);
+                if (chartDiv) {
+                    Plotly.Plots.resize(chartDiv);
+                }
+            });
         });
     </script>
 </body>

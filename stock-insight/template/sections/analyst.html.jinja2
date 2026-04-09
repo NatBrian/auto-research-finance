@@ -1,0 +1,135 @@
+{# Analyst Section - Ratings and price targets #}
+
+{% if analyst %}
+<section class="space-y-4">
+    <h2 class="text-lg font-semibold text-slate-100 flex items-center gap-2">
+        <svg class="w-5 h-5 text-brand-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path>
+        </svg>
+        Analyst Coverage
+    </h2>
+
+    {% if analyst.grades %}
+    <div class="card p-6">
+        <h3 class="font-semibold text-slate-200 mb-4">Analyst Consensus</h3>
+
+        <!-- Rating Bar -->
+        <div class="mb-4">
+            {% set total = analyst.grades.buy + analyst.grades.hold + analyst.grades.sell %}
+            {% if total > 0 %}
+            {% set buy_pct = (analyst.grades.buy / total * 100)|round %}
+            {% set hold_pct = (analyst.grades.hold / total * 100)|round %}
+            {% set sell_pct = (analyst.grades.sell / total * 100)|round %}
+
+            <div class="rating-bar">
+                {% if buy_pct > 0 %}
+                <div class="rating-segment bg-up" style="width: {{ buy_pct }}%">
+                    {% if buy_pct > 15 %}{{ analyst.grades.buy }}{% endif %}
+                </div>
+                {% endif %}
+                {% if hold_pct > 0 %}
+                <div class="rating-segment bg-yellow-500" style="width: {{ hold_pct }}%">
+                    {% if hold_pct > 15 %}{{ analyst.grades.hold }}{% endif %}
+                </div>
+                {% endif %}
+                {% if sell_pct > 0 %}
+                <div class="rating-segment bg-down" style="width: {{ sell_pct }}%">
+                    {% if sell_pct > 15 %}{{ analyst.grades.sell }}{% endif %}
+                </div>
+                {% endif %}
+            </div>
+
+            <div class="flex justify-between mt-2 text-xs text-slate-500">
+                <span class="flex items-center gap-1.5">
+                    <span class="w-2.5 h-2.5 rounded-full bg-up"></span>
+                    Buy ({{ analyst.grades.buy }})
+                </span>
+                <span class="flex items-center gap-1.5">
+                    <span class="w-2.5 h-2.5 rounded-full bg-yellow-500"></span>
+                    Hold ({{ analyst.grades.hold }})
+                </span>
+                <span class="flex items-center gap-1.5">
+                    <span class="w-2.5 h-2.5 rounded-full bg-down"></span>
+                    Sell ({{ analyst.grades.sell }})
+                </span>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Price Targets -->
+        {% if analyst.price_target %}
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+            {% if analyst.price_target.mean %}
+            <div class="p-3 bg-slate-800/50 rounded-lg border border-slate-700/50 text-center">
+                <span class="text-xs text-slate-500 block mb-1">Mean Target</span>
+                <span class="text-xl font-bold text-slate-100">${{ analyst.price_target.mean|round(2) }}</span>
+            </div>
+            {% endif %}
+            {% if analyst.price_target.median %}
+            <div class="p-3 bg-slate-800/50 rounded-lg border border-slate-700/50 text-center">
+                <span class="text-xs text-slate-500 block mb-1">Median Target</span>
+                <span class="text-xl font-bold text-slate-100">${{ analyst.price_target.median|round(2) }}</span>
+            </div>
+            {% endif %}
+            {% if analyst.price_target.high %}
+            <div class="p-3 bg-slate-800/50 rounded-lg border border-slate-700/50 text-center">
+                <span class="text-xs text-slate-500 block mb-1">High Target</span>
+                <span class="text-xl font-bold text-up">${{ analyst.price_target.high|round(2) }}</span>
+            </div>
+            {% endif %}
+            {% if analyst.price_target.low %}
+            <div class="p-3 bg-slate-800/50 rounded-lg border border-slate-700/50 text-center">
+                <span class="text-xs text-slate-500 block mb-1">Low Target</span>
+                <span class="text-xl font-bold text-down">${{ analyst.price_target.low|round(2) }}</span>
+            </div>
+            {% endif %}
+        </div>
+
+        {% if price and price.current_price and analyst.price_target.mean %}
+        {% set upside = ((analyst.price_target.mean - price.current_price) / price.current_price * 100)|round(1) %}
+        <div class="mt-4 p-3 bg-slate-800/30 rounded-lg border border-slate-700/30">
+            <span class="text-sm text-slate-400">Potential upside: </span>
+            <span class="text-lg font-semibold {{ 'text-up' if upside >= 0 else 'text-down' }}">
+                {{ '%+.1f'|format(upside) }}%
+            </span>
+        </div>
+        {% endif %}
+        {% endif %}
+    </div>
+    {% endif %}
+
+    {% if analyst.history and analyst.history|length > 0 %}
+    <div class="card overflow-hidden">
+        <div class="p-4 border-b border-slate-700/50">
+            <h3 class="font-semibold text-slate-200">Recommendation History</h3>
+        </div>
+        <div class="overflow-x-auto">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th class="sticky-col">Period</th>
+                        <th class="text-right">Strong Buy</th>
+                        <th class="text-right">Buy</th>
+                        <th class="text-right">Hold</th>
+                        <th class="text-right">Sell</th>
+                        <th class="text-right">Strong Sell</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for rec in analyst.history[:10] %}
+                    <tr>
+                        <td class="sticky-col font-medium">{{ (rec.get('index') or rec.get('Date') or rec.get('period'))|string|truncate(10, True, '', 0) }}</td>
+                        <td class="text-right font-mono text-up">{{ rec.get('strongBuy', '-') }}</td>
+                        <td class="text-right font-mono text-up">{{ rec.get('buy', '-') }}</td>
+                        <td class="text-right font-mono">{{ rec.get('hold', '-') }}</td>
+                        <td class="text-right font-mono text-down">{{ rec.get('sell', '-') }}</td>
+                        <td class="text-right font-mono text-down">{{ rec.get('strongSell', '-') }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    {% endif %}
+</section>
+{% endif %}

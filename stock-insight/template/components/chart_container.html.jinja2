@@ -1,11 +1,29 @@
-{# Reusable chart container component #}
+{# Reusable chart container component - Professional Financial Dashboard Style #}
 {# Usage: {% include 'components/chart_container.html.jinja2' with context %} #}
-{# Required variables: chart_id, title #}
-{# Optional: height #}
+{# Required variables: chart_id #}
+{# Optional: title, height, show_controls #}
 
-<div class="bg-white dark:bg-gray-800 rounded-lg shadow p-4">
+<div class="card p-6">
     {% if title %}
-    <h3 class="text-lg font-semibold mb-4">{{ title }}</h3>
+    <div class="flex items-center justify-between mb-4">
+        <h3 class="font-semibold text-slate-200">{{ title }}</h3>
+        {% if show_controls %}
+        <div class="flex items-center gap-2">
+            <button class="px-2 py-1 text-xs rounded bg-slate-700 hover:bg-slate-600 text-slate-300 transition-colors">
+                1D
+            </button>
+            <button class="px-2 py-1 text-xs rounded bg-slate-700 hover:bg-slate-600 text-slate-300 transition-colors">
+                1W
+            </button>
+            <button class="px-2 py-1 text-xs rounded bg-brand-600 text-white">
+                1M
+            </button>
+            <button class="px-2 py-1 text-xs rounded bg-slate-700 hover:bg-slate-600 text-slate-300 transition-colors">
+                1Y
+            </button>
+        </div>
+        {% endif %}
+    </div>
     {% endif %}
-    <div id="{{ chart_id }}" style="width: 100%; height: {{ height|default('400px') }};"></div>
+    <div id="{{ chart_id }}" class="chart-container" style="height: {{ height|default('400px') }};"></div>
 </div>

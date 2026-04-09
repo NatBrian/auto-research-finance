@@ -1,0 +1,88 @@
+{# Price Metrics Section - Key price and market data #}
+{# This section displays the main price metrics in a card grid #}
+
+{% if price %}
+<section class="grid grid-cols-2 md:grid-cols-4 gap-4">
+    <!-- Current Price -->
+    <div class="card metric-card p-5 {% if price.get('change_pct', 0) >= 0 %}glow-up{% else %}glow-down{% endif %}">
+        <div class="flex items-start justify-between mb-2">
+            <span class="text-xs text-slate-500 uppercase tracking-wider">Price</span>
+            <span class="text-xs text-slate-600 font-mono">{{ ticker }}</span>
+        </div>
+        <div class="flex items-baseline gap-2">
+            <span class="text-3xl font-bold text-slate-100">${{ price.get('current_price', 'N/A')|round(2) if price.get('current_price') else 'N/A' }}</span>
+        </div>
+        {% if price.get('change_pct') is not none %}
+        <div class="flex items-center gap-2 mt-2">
+            <span class="text-sm font-semibold {{ 'text-up' if price.get('change_pct', 0) >= 0 else 'text-down' }}">
+                {{ '%+.2f'|format(price.get('change_pct', 0)) }}%
+            </span>
+            {% if price.get('change') is not none %}
+            <span class="text-xs text-slate-500">
+                ({{ '%+.2f'|format(price.get('change', 0)) }})
+            </span>
+            {% endif %}
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Volume -->
+    <div class="card metric-card p-5">
+        <div class="flex items-start justify-between mb-2">
+            <span class="text-xs text-slate-500 uppercase tracking-wider">Volume</span>
+            {% if price.avg_volume and price.volume %}
+            {% set vol_ratio = price.volume / price.avg_volume %}
+            <span class="text-xs {{ 'text-brand-400' if vol_ratio > 1.2 else 'text-slate-500' }}">
+                {{ '%.1fx'|format(vol_ratio) }} avg
+            </span>
+            {% endif %}
+        </div>
+        <span class="text-3xl font-bold text-slate-100">{{ price.volume|format_number if price.volume else 'N/A' }}</span>
+        {% if price.avg_volume %}
+        <div class="mt-2 text-sm text-slate-500">
+            Avg: {{ price.avg_volume|format_number }}
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Market Cap -->
+    <div class="card metric-card p-5">
+        <div class="flex items-start justify-between mb-2">
+            <span class="text-xs text-slate-500 uppercase tracking-wider">Market Cap</span>
+        </div>
+        <span class="text-3xl font-bold text-slate-100">{{ price.market_cap|format_number if price.market_cap else 'N/A' }}</span>
+        {% if metrics.get('pe_ratio') and metrics.pe_ratio.get('value') %}
+        <div class="mt-2 text-sm text-slate-500">
+            P/E: {{ metrics.pe_ratio.value|round(1) }}
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- 52 Week Range -->
+    <div class="card metric-card p-5">
+        <div class="flex items-start justify-between mb-2">
+            <span class="text-xs text-slate-500 uppercase tracking-wider">52W Range</span>
+        </div>
+        {% if price.high_52w and price.low_52w %}
+        <div class="space-y-2">
+            <div class="flex justify-between text-sm">
+                <span class="text-slate-500">${{ price.low_52w|round(2) }}</span>
+                <span class="text-slate-500">${{ price.high_52w|round(2) }}</span>
+            </div>
+            {% set range = price.high_52w - price.low_52w %}
+            {% if range > 0 and price.current_price %}
+            {% set position = ((price.current_price - price.low_52w) / range * 100)|round %}
+            <div class="progress-bar">
+                <div class="progress-bar-fill bg-gradient-to-r from-down via-yellow-500 to-up" style="width: {{ position }}%"></div>
+            </div>
+            <div class="relative h-0">
+                <div class="absolute w-2 h-2 bg-brand-400 rounded-full -top-5 transform -translate-x-1/2" style="left: {{ position }}%"></div>
+            </div>
+            {% endif %}
+        </div>
+        {% else %}
+        <span class="text-xl text-slate-500">N/A</span>
+        {% endif %}
+    </div>
+</section>
+{% endif %}

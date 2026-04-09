@@ -47,6 +47,50 @@ def format_large_number(value: float) -> str:
     return f"${value:.2f}"
 
 
+def format_number_plain(value: float) -> str:
+    """Format large numbers with K/M/B/T suffixes without currency symbol."""
+    if value is None:
+        return "N/A"
+    abs_val = abs(value)
+    if abs_val >= 1e12:
+        return f"{value/1e12:.2f}T"
+    elif abs_val >= 1e9:
+        return f"{value/1e9:.2f}B"
+    elif abs_val >= 1e6:
+        return f"{value/1e6:.2f}M"
+    elif abs_val >= 1e3:
+        return f"{value/1e3:.2f}K"
+    return f"{value:.2f}"
+
+
+def format_timestamp(ts) -> str:
+    """Convert Unix timestamp or datetime string to readable format."""
+    if ts is None:
+        return ""
+    try:
+        # Try Unix timestamp (int or float)
+        if isinstance(ts, (int, float)):
+            dt = datetime.fromtimestamp(ts)
+            return dt.strftime("%Y-%m-%d %H:%M")
+        # Try ISO format string
+        if isinstance(ts, str):
+            # Try parsing as ISO format
+            try:
+                dt = datetime.fromisoformat(ts.replace("Z", "+00:00"))
+                return dt.strftime("%Y-%m-%d")
+            except ValueError:
+                pass
+            # Try as Unix timestamp string
+            try:
+                dt = datetime.fromtimestamp(int(ts))
+                return dt.strftime("%Y-%m-%d %H:%M")
+            except (ValueError, TypeError):
+                pass
+        return str(ts)[:16] if len(str(ts)) > 16 else str(ts)
+    except Exception:
+        return str(ts)[:16] if ts else ""
+
+
 def format_percentage(value: float, decimals: int = 1) -> str:
     """Format as percentage with sign for changes."""
     if value is None:
@@ -143,7 +187,9 @@ def render_report(template_data: Dict[str, Any], mode: str) -> str:
 
     # Add custom filters
     env.filters['format_number'] = format_large_number
+    env.filters['format_number_plain'] = format_number_plain
     env.filters['format_percent'] = format_percentage
+    env.filters['format_timestamp'] = format_timestamp
 
     # Load main template
     template = env.get_template("report.html.jinja2")
