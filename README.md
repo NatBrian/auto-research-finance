@@ -1,6 +1,8 @@
 # Auto-Research-Finance
 
-A collection of autonomous AI-driven quantitative finance systems built on **Claude Code** using skills as agents, MCP servers as tool providers, and structured state files as communication buses.
+A collection of autonomous, AI-driven quantitative finance systems that **implement Anthropic-aligned harnessing patterns** using **Claude Code as the customizable orchestration client**. We demonstrates how to construct reproducible, auditable agent workflows for financial research and trading by leveraging Claude Code's extension architecture: Skills for role definition, Model Context Protocol (MCP) for tool integration, and structured state files for inter-agent communication.
+
+> **Why Claude Code as the harness layer?** Claude Code provides the most customizable client-side orchestration environment currently available for LLM-based agent systems.
 
 ---
 
@@ -20,23 +22,26 @@ A collection of autonomous AI-driven quantitative finance systems built on **Cla
 Most projects share a common design pattern native to **Claude Code**:
 
 ```
-┌─────────────────────────────────────────────────────────┐
+┌──────────────────────────────────────────────────────────┐
 │                     Claude Code CLI                      │
-│                                                         │
-│  Skills (.claude/skills/*.md)                           │
+│  • Orchestrates agent reasoning, tool routing, state I/O │
+│  • Implements context engineering via progressive skill  │
+│    loading and session-aware compaction strategies       │
+├──────────────────────────────────────────────────────────┤
+│  Skills (.claude/skills/*.md)                            │
 │    └─ Markdown instruction files that define agent roles │
-│                                                         │
+│                                                          │
 │  State Bus (session/*.md or sandbox/*.md)                │
-│    └─ Structured markdown + embedded JSON               │
-│    └─ All agents read/write this shared file            │
-│                                                         │
-│  MCP Servers (mcp_servers/*/server.py)                  │
-│    └─ Tool providers registered in .claude.json         │
-│    └─ Market data, news, sentiment, exchange, etc.      │
-│                                                         │
-│  Persistence (data/*.db, data/*.json)                   │
-│    └─ SQLite audit trail, portfolio state, cache        │
-└─────────────────────────────────────────────────────────┘
+│    └─ Structured markdown + embedded JSON                │
+│    └─ All agents read/write this shared file             │
+│                                                          │
+│  MCP Servers (mcp_servers/*/server.py)                   │
+│    └─ Tool providers registered in .claude.json          │
+│    └─ Market data, news, sentiment, exchange, etc.       │
+│                                                          │
+│  Persistence (data/*.db, data/*.json)                    │
+│    └─ SQLite audit trail, portfolio state, cache         │
+└──────────────────────────────────────────────────────────┘
 ```
 
 ---
