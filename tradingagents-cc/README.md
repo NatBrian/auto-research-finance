@@ -28,7 +28,7 @@ TradingAgents-CC is a native Claude Code re-implementation of the [TauricResearc
 - **Pluggable Exchange**: Swap between paper trading, Alpaca, and IBKR via config
 
 ### Example Session
-**[View NVDA Trade Example →](https://github.com/NatBrian/auto-research-finance/blob/main/tradingagents-cc/session/examples/NVDA_2026-04-09_1775720838/trading_session.md)**
+**[View NVDA Trade Example →](https://natbrian.github.io/auto-research-finance/tradingagents-cc/session/examples/NVDA_2026-04-09_1775720838/trading_session)**
 
 See a complete successful trade walkthrough with all analyst reports, bull/bear debates, risk assessment, and the final order execution.
 

@@ -1,0 +1,30 @@
+# GitHub Pages configuration
+# Exclude generated/build artifacts while keeping curated sample files.
+
+exclude:
+  # Python artifacts
+  - "__pycache__"
+  - "*.py"
+  - "*.pyc"
+  - ".venv"
+  - "venv"
+  - "requirements.txt"
+  - "setup.py"
+  - "*.egg-info"
+
+  # Config & internal files
+  - "config/"
+  - "mcp_servers/"
+  - ".claude/"
+  - ".qwen/"
+  - "conftest.py"
+  - "pytest.ini"
+
+  # Pipeline runtime / working data (noisy, not for public viewing)
+  - "paper-to-factor-pipeline/sandbox/"
+  - "tradingagents-cc/data/"
+  - "tradingagents-cc/outputs/"
+  - "stock-insight/output/"
+
+  # Old / inferior sample (kept in repo but not rendered on Pages)
+  - "paper-to-factor-pipeline/outputs/examples/"
